@@ -19,6 +19,7 @@ from django.contrib import admin
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
-
+    url(r'^capi/', include('capi.urls')),
+    #url(r'^capi/availabledata/new',),
     
 ]
