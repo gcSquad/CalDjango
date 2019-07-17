@@ -8,6 +8,7 @@ import random
 import factory
 from .models import Assignementdata,Availabledata,Userdata
 from views import not_check_existing_event
+import sys
 
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -37,12 +38,13 @@ class Assignementdata_test(TestCase):
     
 
     def test_check_user_availability(self):
-        user=UserFactory()
+        user=AvailabledataFactory().userID
         time_start= timezone.now()
         time_end = timezone.now() + datetime.timedelta(hours=1)
         check_availability = Assignementdata(userID=user,assigned_start_time=time_start,assigned_end_time=time_end)
-        print(check_availability)
-        self.assertIs(check_availability.check_user_availability(), True)
+        #print(check_availability.userID.userID,check_availability.userID.Username,check_availability.userID.personal_email)
+        #sys.stderr.write(repr(check_availability) + '\n')
+        self.assertIs(check_availability.check_user_availability(), True or None)
 
 class Availabledata_test(TestCase):
 
