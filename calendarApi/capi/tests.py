@@ -7,8 +7,8 @@ from faker import Faker
 import random  
 import factory
 from .models import Assignementdata,Availabledata,Userdata
-from views import not_check_existing_event
-from unittest.mock import Mock, patch
+from views import non_existing_event
+# from unittest.mock import Mock, patch
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -41,8 +41,6 @@ class Assignementdata_test(TestCase):
         time_start= timezone.now()
         time_end = timezone.now() + datetime.timedelta(hours=1)
         check_availability = Assignementdata(userID=user,assigned_start_time=time_start,assigned_end_time=time_end)
-        #print(check_availability.userID.userID,check_availability.userID.Username,check_availability.userID.personal_email)
-        #sys.stderr.write(repr(check_availability) + '\n')
         self.assertIs(check_availability.check_user_availability(), True)
 
     # @patch(Assignementdata.save_calendar_event)
@@ -52,6 +50,6 @@ class Assignementdata_test(TestCase):
 
 class Availabledata_test(TestCase):
 
-    def test_not_check_existing_event(self):
-        self.assertIs(not_check_existing_event("486ihp9uorri21r58u61t6l6nc"),True)
+    def test_non_existing_event(self):
+        self.assertIs(non_existing_event("486ihp9uorri21r58u61t6l6nc"),True)
 

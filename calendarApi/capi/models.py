@@ -35,7 +35,6 @@ class Assignementdata(models.Model):
     event_id = models.CharField(max_length=100,blank=True)
 
     def save_calendar_event(self):
-        print("test")
         email=self.userID.personal_email
         start_time=self.assigned_start_time.isoformat()
         end_time=self.assigned_end_time.isoformat()

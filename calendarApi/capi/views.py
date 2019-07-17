@@ -19,7 +19,7 @@ def import_data(request):
     if not events:
         return redirect('/admin/capi/availabledata')
     for event in events:
-        if not_check_existing_event(event['id']):
+        if non_existing_event(event['id']):
             if event['summary'] == 'Available':
                 user=Userdata.objects.get(personal_email=event['creator']['email'])
                 new_record = Availabledata.objects.create(event_id=event['id'],
@@ -29,6 +29,6 @@ def import_data(request):
                 )
     return redirect('/admin/capi/availabledata')
 
-def not_check_existing_event(id):
+def non_existing_event(id):
     existing_event=Availabledata.objects.filter(event_id = id).count()
     return existing_event == 0
