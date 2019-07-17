@@ -28,15 +28,14 @@ class Availabledata(models.Model):
         return self.userID.personal_email
 
 
-        
-
 class Assignementdata(models.Model):
     userID=models.ForeignKey(Userdata)
     assigned_start_time =models.DateTimeField()
     assigned_end_time =models.DateTimeField()
     event_id = models.CharField(max_length=100,blank=True)
-    def save_calendar_event(self):
 
+    def save_calendar_event(self):
+        print("test")
         email=self.userID.personal_email
         start_time=self.assigned_start_time.isoformat()
         end_time=self.assigned_end_time.isoformat()
@@ -71,22 +70,46 @@ class Assignementdata(models.Model):
         self.event_id=event['id']
         self.save(test_flag=True)
 
+    def validate_entered_time(self):
+        return self.assigned_end_time > self.assigned_start_time
+            
 
+    def check_user_availability(self):
+        valid_time = self.validate_entered_time()
+        if valid_time:
+            available_record= Availabledata.objects.filter(userID__userID=self.userID.userID)
+            count =available_record.count()
+            for i in range(count):
+                return (self.assigned_start_time >= available_record[i].available_start_time and self.assigned_end_time < available_record[i].available_end_time)
 
     def save(self,*args,**kwargs):
-
-        isa_email_id=(self.userID.personal_email)
-        available_record=Availabledata.objects.filter(userID__userID=self.userID.userID)
-        count=available_record.count()
-        for i in range(count):  
-            if(self.assigned_start_time >= available_record[i].available_start_time and self.assigned_end_time <available_record[i].available_end_time):
-                if 'test_flag' in kwargs and kwargs["test_flag"] == True:
-                    super(Assignementdata,self).save(*args,**kwargs)
-                else:
-                    setappointment.delay(self.id)
-                    
+        user_available = self.check_user_availability()
+        if user_available:
+            if 'test_flag' in kwargs:
+                del kwargs['test_flag']
+                super(Assignementdata,self).save(*args,**kwargs)
             else:
-                print("User is not available for the given timeslot")
+                super(Assignementdata,self).save(*args,**kwargs)
+                setappointment.delay(self.id)
+        else:
+            print("The timeslots entered is not correct for given user")
+
+
+
+
+
+
+        # available_record=Availabledata.objects.filter(userID__userID=self.userID.userID)
+        # count=available_record.count()
+        # for i in range(count):  
+        #     if(self.assigned_start_time >= available_record[i].available_start_time and self.assigned_end_time <available_record[i].available_end_time):
+        #         if 'test_flag' in kwargs and kwargs["test_flag"] == True:
+        #             super(Assignementdata,self).save(*args,**kwargs)
+        #         else:
+        #             setappointment.delay(self.id)
+                    
+        #     else:
+        #         print("User is not available for the given timeslot")
         
         
         
