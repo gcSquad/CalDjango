@@ -8,7 +8,8 @@ import random
 import factory
 from .models import Assignementdata,Availabledata,Userdata
 from views import not_check_existing_event
-import sys
+from unittest.mock import Mock, patch
+
 
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -35,8 +36,6 @@ class Assignementdata_test(TestCase):
         checktime = Assignementdata(userID=user,assigned_start_time=time_start,assigned_end_time=time_end)
         self.assertIs(checktime.validate_entered_time(), True)
 
-    
-
     def test_check_user_availability(self):
         user=AvailabledataFactory().userID
         time_start= timezone.now()
@@ -44,7 +43,12 @@ class Assignementdata_test(TestCase):
         check_availability = Assignementdata(userID=user,assigned_start_time=time_start,assigned_end_time=time_end)
         #print(check_availability.userID.userID,check_availability.userID.Username,check_availability.userID.personal_email)
         #sys.stderr.write(repr(check_availability) + '\n')
-        self.assertIs(check_availability.check_user_availability(), True or None)
+        self.assertIs(check_availability.check_user_availability(), True)
+
+    # @patch(Assignementdata.save_calendar_event)
+    # def test_save_calendar_event(mock_get):
+        
+
 
 class Availabledata_test(TestCase):
 
