@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 from django.test import TestCase
@@ -6,21 +5,21 @@ import datetime
 from django.utils import timezone
 from faker import Faker
 import random  
-# Create your tests here.
 import factory
 from .models import Assignementdata,Availabledata,Userdata
+from views import not_check_existing_event
 
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Userdata
-    userID= 99
+    userID= random.randrange(0,100,2)
     personal_email= factory.Faker('email')
     Username = factory.Faker('name')
 
-class UserFactory(factory.django.DjangoModelFactory):
+class AvailabledataFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Availabledata
-    userID=UserFactory()
+    userID=factory.SubFactory(UserFactory)
     available_start_time=timezone.now()-datetime.timedelta(hours=1)
     available_end_time=timezone.now()+datetime.timedelta(hours=3)
 
@@ -37,16 +36,16 @@ class Assignementdata_test(TestCase):
 
     
 
-    def test_check_user_availability():
+    def test_check_user_availability(self):
         user=UserFactory()
         time_start= timezone.now()
         time_end = timezone.now() + datetime.timedelta(hours=1)
-        checktime = Assignementdata(userID=user,assigned_start_time=time_start,assigned_end_time=time_end)
-        self.assertIs(checktime.check_user_availability(), True)
-        
+        check_availability = Assignementdata(userID=user,assigned_start_time=time_start,assigned_end_time=time_end)
+        print(check_availability)
+        self.assertIs(check_availability.check_user_availability(), True)
 
-# class Availabledata_test(TestCase):
+class Availabledata_test(TestCase):
 
-    
-
+    def test_not_check_existing_event(self):
+        self.assertIs(not_check_existing_event("486ihp9uorri21r58u61t6l6nc"),True)
 

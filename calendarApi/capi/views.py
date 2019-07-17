@@ -1,11 +1,7 @@
 from __future__ import print_function
 import datetime   
-import pytz
 import pickle
-import os.path
 from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
 from django.core.files import File
 from django.http import HttpResponse
 from django.shortcuts import redirect
@@ -23,8 +19,7 @@ def import_data(request):
     if not events:
         return redirect('/admin/capi/availabledata')
     for event in events:
-        existing_event=Availabledata.objects.filter(event_id = event['id']).count()
-        if (existing_event==0):
+        if not_check_existing_event(event['id']):
             if event['summary'] == 'Available':
                 user=Userdata.objects.get(personal_email=event['creator']['email'])
                 new_record = Availabledata.objects.create(event_id=event['id'],
@@ -33,3 +28,7 @@ def import_data(request):
                 available_start_time=event['start']['dateTime']
                 )
     return redirect('/admin/capi/availabledata')
+
+def not_check_existing_event(id):
+    existing_event=Availabledata.objects.filter(event_id = id).count()
+    return existing_event == 0
