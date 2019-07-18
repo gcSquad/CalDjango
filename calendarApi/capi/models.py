@@ -24,6 +24,42 @@ class Availabledata(models.Model):
     available_end_time =models.DateTimeField()
     event_id = models.CharField(max_length=100,blank=True)
 
+    @classmethod
+    def return_userby_email(self,email,userlist):
+        for user in userlist:
+            if(user.personal_email == email):
+                return user
+            else:
+                continue
+
+    
+    @classmethod
+    def get_event_data(self):
+        scopes = ['https://www.googleapis.com/auth/calendar']
+        credentials = pickle.load(open("token.pkl", "rb"))
+        # timemin=datetime.datetime.now()-datetime.timedelta(days='1')
+        service = build('calendar', 'v3', credentials=credentials)
+        events_result = service.events().list(calendarId='primary',
+                                            singleEvents=True,
+                                            timeMin="2018-07-03T14:30:00+03:00",
+                                            orderBy='startTime').execute()
+        events = events_result.get('items', [])
+        event_in_db =list(Availabledata.objects.values_list('event_id',flat=True))
+        users_in_db =list(Userdata.objects.all())
+        user_email_list=[]
+        for users in users_in_db:
+            user_email_list.append(users.personal_email)
+            new_records=[]
+        for event in events:
+            if  event['id'] not in event_in_db and event['creator']['email'] in user_email_list:
+                user=self.return_userby_email(event['creator']['email'],users_in_db)
+                new_object=self(event_id=event['id'],userID=user,available_end_time=event['end']['dateTime'],available_start_time=event['start']['dateTime'])
+                new_records.append(new_object)
+        self.objects.bulk_create(new_records)
+        return
+
+    
+
     def __str__(self):
         return self.userID.personal_email
 
