@@ -35,6 +35,11 @@ class Assignementdata(models.Model):
     event_id = models.CharField(max_length=100,blank=True)
 
     def save_calendar_event(self):
+        event=self.insert_api_call()
+        self.event_id=event['id']
+        self.save(test_flag=True)
+
+    def insert_api_call(self):
         email=self.userID.personal_email
         start_time=self.assigned_start_time.isoformat()
         end_time=self.assigned_end_time.isoformat()
@@ -66,8 +71,8 @@ class Assignementdata(models.Model):
             }
 
         event = service.events().insert(calendarId='primary', body=event).execute()
-        self.event_id=event['id']
-        self.save(test_flag=True)
+        return event
+
 
     def validate_entered_time(self):
         return self.assigned_end_time > self.assigned_start_time
@@ -89,26 +94,10 @@ class Assignementdata(models.Model):
                 super(Assignementdata,self).save(*args,**kwargs)
             else:
                 super(Assignementdata,self).save(*args,**kwargs)
-                setappointment.delay(self.id)
+                transaction.on_commit(lambda:setappointment.delay(self.id))
         else:
             print("The timeslots entered is not correct for given user")
 
-
-
-
-
-
-        # available_record=Availabledata.objects.filter(userID__userID=self.userID.userID)
-        # count=available_record.count()
-        # for i in range(count):  
-        #     if(self.assigned_start_time >= available_record[i].available_start_time and self.assigned_end_time <available_record[i].available_end_time):
-        #         if 'test_flag' in kwargs and kwargs["test_flag"] == True:
-        #             super(Assignementdata,self).save(*args,**kwargs)
-        #         else:
-        #             setappointment.delay(self.id)
-                    
-        #     else:
-        #         print("User is not available for the given timeslot")
         
         
         
