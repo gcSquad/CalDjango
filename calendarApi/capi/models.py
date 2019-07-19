@@ -5,6 +5,7 @@ from tasks import setappointment
 import datetime   
 import pickle
 import os.path
+import pytz
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from django.core.files import File
@@ -31,17 +32,23 @@ class Availabledata(models.Model):
                 return user
             else:
                 continue
+#"2018-07-03T14:30:00+03:00"
 
-    
+
     @classmethod
     def get_event_data(self):
         scopes = ['https://www.googleapis.com/auth/calendar']
         credentials = pickle.load(open("token.pkl", "rb"))
-        # timemin=datetime.datetime.now()-datetime.timedelta(days='1')
+        tz = pytz.timezone('Asia/Kolkata')
+        previous_datetime=datetime.datetime.now()-datetime.timedelta(days=1)
+        timemin=tz.localize(previous_datetime).replace(microsecond=0).isoformat()
+        next_datetime=datetime.datetime.now()+datetime.timedelta(days=1)
+        timeMax=tz.localize(next_datetime).replace(microsecond=0).isoformat()
         service = build('calendar', 'v3', credentials=credentials)
         events_result = service.events().list(calendarId='primary',
                                             singleEvents=True,
-                                            timeMin="2018-07-03T14:30:00+03:00",
+                                            timeMin=timemin,
+                                            timeMax=timeMax,
                                             orderBy='startTime').execute()
         events = events_result.get('items', [])
         event_in_db =list(Availabledata.objects.values_list('event_id',flat=True))

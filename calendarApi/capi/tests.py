@@ -56,7 +56,7 @@ class Assignementdata_test(TestCase):
     #     new_task.save_calendar_event()
     #     mock_insert_api_call.assert_called()
 
-# class Availabledata_test(TestCase):
+class Availabledata_test(TestCase):
 
     # def test_non_existing_event(self):
     #     self.assertIs(non_existing_event("486ihp9uorri21r58u61t6l6nc"),True)
