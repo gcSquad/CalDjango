@@ -1,12 +1,12 @@
-from rest_framework import routers, serializers, viewsets
+from rest_framework import serializers
+from .models import Userdata,Assignementdata
 
-class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField(
-        max_length=100,
-        style={'placeholder': 'Email', 'autofocus': True}
-    )
-    password = serializers.CharField(
-        max_length=100,
-        style={'input_type': 'password', 'placeholder': 'Password'}
-    )
-    remember_me = serializers.BooleanField()
+class userSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Userdata
+        fields = '__all__'
+
+class assignedDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Assignementdata
+        fields = '__all__'

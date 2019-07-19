@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Login{% endblock %}
+
+{% block content %}
+  <h2>Home</h2>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script> 
+      function apireq(){
+        var user_id=""
+        $.ajax({
+                 url : "http://127.0.0.1:8000/userapi",
+                 dataType: "json",
+                 success : function (data) {
+                          for (var i=0;i<data.length;i++){
+                            if(data[i].personal_email == "{{user.email}}")
+                            {
+                              user_id=data[i].userID
+                            }
+                          }
+                        }
+                     });
+                     $.ajax({
+                 url : "http://127.0.0.1:8000/assignmentapi",
+                 dataType: "json",
+                 success : function (data) {
+                          for (var i=0;i<data.length;i++){
+                            if(data[i].userID == user_id)
+                            { 
+                              var text=data[i].assigned_start_time+"   "+data[i].assigned_end_time;
+                              $("#api_data").text(text)
+                            }
+                          }
+                        }
+                     });
+      }
+    </script>
+  <body>
+    <header>
+      <h1>Welcome to CalendarApi.com</h1>
+      {% if user.is_authenticated %}
+        Hi {{ user.username }}!
+        <a href="{% url 'logout' %}">logout</a>
+        <div>
+          <button class="apireq" style="margin-top:10px;padding:5px" onclick="apireq()">Get Your Assignments </button> 
+       </div>
+       <div id="api_data"></div>
+      {% else %}
+        <a href="{% url 'login' %}">login</a>
+      {% endif %}
+    </header>
+  </body>
+{% endblock %}
+
+

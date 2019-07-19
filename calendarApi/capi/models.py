@@ -10,6 +10,7 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from django.core.files import File
 import json
+from django.db import transaction
 
 class Userdata(models.Model):
     userID = models.AutoField(primary_key=True)

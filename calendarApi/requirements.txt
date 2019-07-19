@@ -1,0 +1,10 @@
+Django==1.11.22
+mock==3.0.5
+factory_boy==2.12.0
+Faker==2.0.0
+pytz==2019.1
+google_auth_oauthlib==0.4.0
+factory==1.2
+protobuf==3.9.0
+google_api_python_client==1.7.9
+djangorestframework==3.10.1

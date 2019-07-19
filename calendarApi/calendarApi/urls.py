@@ -16,14 +16,19 @@ Including another URLconf
 
 from django.conf.urls import url, include
 from django.contrib.auth.models import User
-
+from django.contrib.auth import views as auth_views
 from django.contrib import admin
+from capi import views
 
 
 urlpatterns = [
-    # url(r'^', include(router.urls)),
+    url(r'^$', auth_views.login,{'template_name': 'home.html'}, name='home'),
+    url(r'^login/$', auth_views.login,{'template_name': 'login.html'}, name='login'),
+    url(r'^logout/$', auth_views.logout,{'template_name': 'logged_out.html'}, name='logout'),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^capi/', include('capi.urls')),
+    url(r'^userapi$', views.Get_user_List.as_view(),name='userapi'),
+    url(r'^assignmentapi$', views.Get_assignment_List.as_view(),name='assignmentapi'),
     # url(r'^api-auth/', include('rest_framework.urls')),
     # url(r'^rest-auth/', include('rest_auth.urls')),
     #url(r'^capi/availabledata/new',),
