@@ -29,7 +29,10 @@
                               var text=data[i].assigned_start_time+"   "+data[i].assigned_end_time;
                               $("#api_data").text(text)
                             }
-                          }
+                            }
+                            if($("#api_data").innerHTML=""){
+                              $("#api_data").text("You can have a rest day!! Chilllll!!!")
+                            }
                         }
                      });
       }
