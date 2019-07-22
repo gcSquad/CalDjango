@@ -8,7 +8,6 @@ import random
 import unittest
 import factory
 from .models import Assignementdata,Availabledata,Userdata
-from views import non_existing_event
 from mock import Mock, patch
 
 
@@ -56,8 +55,12 @@ class Assignementdata_test(TestCase):
     #     new_task.save_calendar_event()
     #     mock_insert_api_call.assert_called()
 
-# class Availabledata_test(TestCase):
+class Availabledata_test(TestCase):
 
-    # def test_non_existing_event(self):
-    #     self.assertIs(non_existing_event("486ihp9uorri21r58u61t6l6nc"),True)
+    def test_return_user_by_email(self):
+        userlist=Userdata.objects.all()
+        email="gauarv.pg007@gmail.com"
+        user=Userdata.objects.get(personal_email="gauarv.pg007@gmail.com")
+        print(user)
+        self.assertIs(user.return_user_by_email(email,userlist),user)
 

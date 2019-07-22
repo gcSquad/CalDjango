@@ -11,10 +11,36 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from django.core.files import File
 import json
 from django.db import transaction
+from google.oauth2.credentials import Credentials
 
+class Credentials_db(models.Model):
+    token=models.CharField(max_length=500,null=True,blank=True)
+    refresh_token=models.CharField(max_length=500,null=True,blank=True)
+    client_secret=models.CharField(max_length=500,null=True,blank=True)
+    client_id=models.CharField(max_length=500,null=True,blank=True)
+    user_email=  models.EmailField(max_length=70, unique= True)
+    @classmethod
+    def get_credentials(self,email):
+
+        credentials_db=Credentials_db.objects.get(user_email=email)
+        credentials={
+            "token":credentials_db.token,
+            "refresh_token":credentials_db.refresh_token,
+            "client_secret":credentials_db.client_secret,
+            "client_id":credentials_db.client_id,
+            "token_uri":"https://oauth2.googleapis.com/token"
+        }
+        cred_obj= Credentials(**credentials)
+        return cred_obj
+
+    # @classmethod
+    # def insert_data(name,token,refresh_token):
+    #     new_object=Admin_user.objects.create(token=token,refresh_token=refresh_token,client_id=client_id,client_secret=client_secret)
+    #     new_object.save()
+    
 class Userdata(models.Model):
     userID = models.AutoField(primary_key=True)
-    personal_email=  models.EmailField(max_length=70,blank=True, null= True, unique= True)
+    personal_email=  models.EmailField(max_length=70, unique= True)
     Username = models.CharField(max_length=120)
     
     def __unicode__(self):
@@ -24,7 +50,7 @@ class Availabledata(models.Model):
     userID=models.ForeignKey(Userdata)
     available_start_time =models.DateTimeField()
     available_end_time =models.DateTimeField()
-    event_id = models.CharField(max_length=100,blank=True)
+    event_id = models.CharField(max_length=100,blank=True,null=True)
 
     @classmethod
     def return_userby_email(self,email,userlist):
@@ -40,18 +66,22 @@ class Availabledata(models.Model):
         elif operator == 'subtract':
             required_datetime = datetime.datetime.now()-datetime.timedelta(days=days_delta)
 
-        date_in_required_format = timemin=tz.localize(required_datetime).replace(microsecond=0).isoformat()
+        date_in_required_format = tz.localize(required_datetime).replace(microsecond=0).isoformat()
         return date_in_required_format
 
-
     @classmethod
-    def event_data(self):
+    def event_data(self,email):
         scopes = ['https://www.googleapis.com/auth/calendar']
-        credentials = pickle.load(open("token.pkl", "rb"))
-        timemin = self.return_dates(1,'subtract')
-        timeMax = self.return_dates(1,'add')
-
-        service = build('calendar', 'v3', credentials=credentials)
+        user_exist=Credentials_db.objects.get(user_email=email)
+        if not user_exist:
+            flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", scopes=scopes)
+            credentials = flow.run_console()
+            new_credential= Credentials_db.objects.create(user_email=email,token=credentials.token,refresh_token=credentials.refresh_token,client_id=credentials.client_id,client_secret=credentials.client_secret)
+            new_credential.save()
+        cred_obj= Credentials_db.get_credentials(email)
+        timemin = self.return_dates(10,'subtract')
+        timeMax = self.return_dates(10,'add') 
+        service = build('calendar', 'v3', credentials=cred_obj)
         events_result = service.events().list(calendarId='primary',
                                             singleEvents=True,
                                             timeMin=timemin,
@@ -61,12 +91,11 @@ class Availabledata(models.Model):
         event_in_db =list(Availabledata.objects.values_list('event_id',flat=True))
         users_in_db =list(Userdata.objects.all())
         user_email_list=[]
+        new_records=[]
         for users in users_in_db:
-            user_email_list.append(users.personal_email)
-            new_records=[]
+            user_email_list.append(users.personal_email)   
         for event in events:
-            if  event['id'] not in event_in_db and event['creator']['email'] in user_email_list:
-
+             if  event['id'] not in event_in_db and event['creator']['email'] in user_email_list:
                 user=self.return_userby_email(event['creator']['email'],users_in_db)
                 new_object= self(event_id=event['id'],
                                 userID=user,
@@ -101,7 +130,7 @@ class Assignementdata(models.Model):
         end_time=self.assigned_end_time.isoformat()
 
         scopes = ['https://www.googleapis.com/auth/calendar']
-        credentials = pickle.load(open("token.pkl", "rb"))
+        credentials = Credentials_db.get_credentials(email)
         service = build("calendar", "v3", credentials=credentials)
         event = {
             'summary': 'Meeting Sceduled',
