@@ -14,11 +14,11 @@ from django.db import transaction
 from google.oauth2.credentials import Credentials
 
 class Credentials_db(models.Model):
-    token=models.CharField(max_length=500,null=True,blank=True)
-    refresh_token=models.CharField(max_length=500,null=True,blank=True)
-    client_secret=models.CharField(max_length=500,null=True,blank=True)
-    client_id=models.CharField(max_length=500,null=True,blank=True)
-    user_email=  models.EmailField(max_length=70, unique= True)
+    token=models.CharField(max_length=500)
+    refresh_token=models.CharField(max_length=500)
+    client_secret=models.CharField(max_length=500)
+    client_id=models.CharField(max_length=500)
+    user_email=  models.EmailField(max_length=70, unique=True )
     @classmethod
     def get_credentials(self,email):
 
@@ -41,14 +41,9 @@ class Credentials_db(models.Model):
         new_credential.save()
 
 
-
-    # @classmethod
-    # def insert_data(name,token,refresh_token):
-    #     new_object=Admin_user.objects.create(token=token,refresh_token=refresh_token,client_id=client_id,client_secret=client_secret)
-    #     new_object.save()
     
 class Userdata(models.Model):
-    userID = models.AutoField(primary_key=True)
+    userID = models.AutoField(primary_key=True,db_column="userID")
     personal_email=  models.EmailField(max_length=70, unique= True)
     Username = models.CharField(max_length=120)
     
@@ -56,7 +51,7 @@ class Userdata(models.Model):
         return self.Username
 
 class Availabledata(models.Model):
-    userID=models.ForeignKey(Userdata)
+    userID=models.ForeignKey(Userdata,db_column="userID")
     available_start_time =models.DateTimeField()
     available_end_time =models.DateTimeField()
     event_id = models.CharField(max_length=100,blank=True,null=True)
@@ -88,8 +83,9 @@ class Availabledata(models.Model):
         timemin = self.return_dates(10,'subtract')
         timeMax = self.return_dates(10,'add') 
         service = build('calendar', 'v3', credentials=cred_obj)
+
         events_result = service.events().list(calendarId='primary',singleEvents=True,timeMin=timemin,timeMax=timeMax,orderBy='startTime').execute()
-        
+
         events = events_result.get('items', [])
         event_in_db =list(Availabledata.objects.values_list('event_id',flat=True))
         users_in_db =list(Userdata.objects.all())
@@ -100,8 +96,7 @@ class Availabledata(models.Model):
         for event in events:
              if  event['id'] not in event_in_db and event['creator']['email'] in user_email_list:
                 user=self.return_userby_email(event['creator']['email'],users_in_db)
-                new_object= self(event_id=event['id'],
-                                userID=user,
+                new_object= self(event_id=event['id'],userID=user,
                                 available_end_time=event['end']['dateTime'],
                                 available_start_time=event['start']['dateTime']
                                 )
@@ -117,7 +112,7 @@ class Availabledata(models.Model):
 
 
 class Assignementdata(models.Model):
-    userID=models.ForeignKey(Userdata)
+    userID=models.ForeignKey(Userdata,db_column="userID")
     assigned_start_time =models.DateTimeField()
     assigned_end_time =models.DateTimeField()
     event_id = models.CharField(max_length=100,blank=True)
