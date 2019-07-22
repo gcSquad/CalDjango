@@ -33,6 +33,15 @@ class Credentials_db(models.Model):
         cred_obj= Credentials(**credentials)
         return cred_obj
 
+    @classmethod
+    def save_new_credential(self,email):
+        flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", scopes=scopes)
+        credentials = flow.run_console()
+        new_credential= Credentials_db.objects.create(user_email=email,token=credentials.token,refresh_token=credentials.refresh_token,client_id=credentials.client_id,client_secret=credentials.client_secret)
+        new_credential.save()
+
+
+
     # @classmethod
     # def insert_data(name,token,refresh_token):
     #     new_object=Admin_user.objects.create(token=token,refresh_token=refresh_token,client_id=client_id,client_secret=client_secret)
@@ -74,19 +83,13 @@ class Availabledata(models.Model):
         scopes = ['https://www.googleapis.com/auth/calendar']
         user_exist=Credentials_db.objects.get(user_email=email)
         if not user_exist:
-            flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", scopes=scopes)
-            credentials = flow.run_console()
-            new_credential= Credentials_db.objects.create(user_email=email,token=credentials.token,refresh_token=credentials.refresh_token,client_id=credentials.client_id,client_secret=credentials.client_secret)
-            new_credential.save()
+            Credentials_db.save_new_credential(email)    
         cred_obj= Credentials_db.get_credentials(email)
         timemin = self.return_dates(10,'subtract')
         timeMax = self.return_dates(10,'add') 
         service = build('calendar', 'v3', credentials=cred_obj)
-        events_result = service.events().list(calendarId='primary',
-                                            singleEvents=True,
-                                            timeMin=timemin,
-                                            timeMax=timeMax,
-                                            orderBy='startTime').execute()
+        events_result = service.events().list(calendarId='primary',singleEvents=True,timeMin=timemin,timeMax=timeMax,orderBy='startTime').execute()
+        
         events = events_result.get('items', [])
         event_in_db =list(Availabledata.objects.values_list('event_id',flat=True))
         users_in_db =list(Userdata.objects.all())
