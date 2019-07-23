@@ -23,8 +23,8 @@ class CredentialsDB(models.Model):
     client_secret_file=JSONField()
 
     
-    @classmethod
-    def get_credentials(self,email):
+    @staticmethod
+    def get_credentials(cls,email):
 
         Credentials_data=CredentialsDB.objects.get(user_email=email)
         credentials={
@@ -37,8 +37,8 @@ class CredentialsDB(models.Model):
         cred_obj= Credentials(**credentials)
         return cred_obj
 
-    @classmethod
-    def save_new_credential(self,email):
+    @staticmethod
+    def save_new_credential(cls,email):
         scopes = ['https://www.googleapis.com/auth/calendar']
         try:
             client_data=CredentialsDB.objects.get(user_email=email)
@@ -65,7 +65,7 @@ class Userdata(models.Model):
         return self.Username
 
 class Availabledata(models.Model):
-    userID=models.ForeignKey(Userdata)
+    user=models.ForeignKey(Userdata)
     available_start_time =models.DateTimeField()
     available_end_time =models.DateTimeField()
     event_id = models.CharField(max_length=100,blank=True,null=True)
@@ -115,7 +115,7 @@ class Availabledata(models.Model):
         for event in events:
              if  event['id'] not in event_in_db and event['creator']['email'] in user_email_list:
                 user=self.return_userby_email(event['creator']['email'],users_in_db)
-                new_object= self(event_id=event['id'],userID=user,
+                new_object= self(event_id=event['id'],user=user,
                                 available_end_time=event['end']['dateTime'],
                                 available_start_time=event['start']['dateTime']
                                 )
@@ -127,11 +127,11 @@ class Availabledata(models.Model):
     
 
     def __unicode__(self):
-        return self.userID.personal_email
+        return self.user.personal_email
 
 
 class Assignementdata(models.Model):
-    userID=models.ForeignKey(Userdata,db_column="userID")
+    user=models.ForeignKey(Userdata)
     assigned_start_time =models.DateTimeField()
     assigned_end_time =models.DateTimeField()
     event_id = models.CharField(max_length=100,blank=True)
@@ -142,7 +142,7 @@ class Assignementdata(models.Model):
         self.save(test_flag=True)
 
     def insert_api_call(self):
-        email=self.userID.personal_email
+        email=self.user.personal_email
         start_time=self.assigned_start_time.isoformat()
         end_time=self.assigned_end_time.isoformat()
 
@@ -175,18 +175,21 @@ class Assignementdata(models.Model):
 
     def check_user_availability(self):
         valid_time = self.validate_entered_time()
+        valid_count=0
         if valid_time:
 
-            available_record= Availabledata.objects.filter(userID__userID=self.userID.userID)
-            
+            available_record= Availabledata.objects.filter(user__userID=self.user.userID)
             count =available_record.count() #get total records for a particular isa
             
             for i in range(count):       #check if isa's available slot fits for asignement 
 
                 slot_available_start_time = available_record[i].available_start_time
                 slot_available_end_time = available_record[i].available_end_time
-
-                return (self.assigned_start_time >= slot_available_start_time and self.assigned_end_time < slot_available_end_time)
+                
+                if self.assigned_start_time >= slot_available_start_time and self.assigned_end_time < slot_available_end_time:
+                    valid_count =valid_count+1
+            return valid_count >0
+                
 
     def save(self,*args,**kwargs):
 

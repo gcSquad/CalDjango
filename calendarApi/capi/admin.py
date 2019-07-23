@@ -7,11 +7,11 @@ from capi.models import Userdata,Availabledata,Assignementdata,CredentialsDB
 class UserdataAdmin(admin.ModelAdmin):
     list_display=('userID','Username','personal_email')
 class AvailabledataAdmin(admin.ModelAdmin):
-    list_display=('userID','available_start_time','available_end_time')
+    list_display=('user','available_start_time','available_end_time')
  #   actions = [refresh]
 
 class AssignementAdmin(admin.ModelAdmin):
-    list_display=('userID','assigned_start_time','assigned_end_time')
+    list_display=('user','assigned_start_time','assigned_end_time')
     exclude=('event_id',)
 
 class CredentialsAdmin(admin.ModelAdmin):
