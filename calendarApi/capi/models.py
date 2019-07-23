@@ -23,9 +23,12 @@ class CredentialsDB(models.Model):
     user_email=  models.EmailField(max_length=70,unique=True,default="gaurav.chaturvedi@squadrun.co")
     client_secret_file=JSONField()
 
+    class Meta:
+        verbose_name_plural = "Credentials"
+
     
-    @staticmethod
-    def get_credentials(cls,email):
+    @classmethod
+    def get_credentials(self,email):
 
         Credentials_data=CredentialsDB.objects.get(user_email=email)
         credentials={
@@ -38,14 +41,14 @@ class CredentialsDB(models.Model):
         cred_obj= Credentials(**credentials)
         return cred_obj
 
-    @staticmethod
-    def save_new_credential(cls,email):
+    @classmethod
+    def save_new_credential(self,email):
         scopes = ['https://www.googleapis.com/auth/calendar']
         try:
             client_data=CredentialsDB.objects.get(user_email=email)
             client_secret_data=client_data.client_secret_file
         except CredentialsDB.DoesNotExist:
-            print("have to figure out what to do yha p")
+            print("have to figure out what to do here")
         flow = InstalledAppFlow.from_client_config(client_secret_data, scopes=scopes)
         
         credentials = flow.run_local_server()
@@ -62,6 +65,9 @@ class Userdata(models.Model):
     personal_email=  models.EmailField(max_length=70, unique= True)
     Username = models.CharField(max_length=120)
     
+    class Meta:
+        verbose_name_plural = "users"
+
     def __unicode__(self):
         return self.Username
 
@@ -70,6 +76,9 @@ class Availabledata(models.Model):
     available_start_time =models.DateTimeField()
     available_end_time =models.DateTimeField()
     event_id = models.CharField(max_length=100,blank=True,null=True)
+
+    class Meta:
+        verbose_name_plural = "availableData"
 
     @staticmethod
     def return_userby_email(email,userlist):
@@ -136,6 +145,9 @@ class Assignementdata(models.Model):
     assigned_start_time =models.DateTimeField()
     assigned_end_time =models.DateTimeField()
     event_id = models.CharField(max_length=100,blank=True)
+
+    class Meta:
+        verbose_name_plural = "assignmentData"
 
     def save_calendar_event(self):
         event=self.insert_api_call()
