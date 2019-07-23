@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from django.db import models
+from django.contrib.auth.models import User
 from tasks import setappointment
 import datetime   
 import pickle
@@ -8,26 +9,31 @@ import os.path
 import pytz
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
+from django.contrib.postgres.fields import JSONField
 from django.core.files import File
 import json
 from django.db import transaction
 from google.oauth2.credentials import Credentials
 
-class Credentials_db(models.Model):
-    token=models.CharField(max_length=500)
-    refresh_token=models.CharField(max_length=500)
-    client_secret=models.CharField(max_length=500)
-    client_id=models.CharField(max_length=500)
-    user_email=  models.EmailField(max_length=70, unique=True )
+class CredentialsDB(models.Model):
+
+    token=models.CharField(max_length=500,null=True,blank=True)
+    refresh_token=models.CharField(max_length=500,null=True,blank=True)
+    client_secret=models.CharField(max_length=500,null=True,blank=True)
+    client_id=models.CharField(max_length=500,null=True,blank=True)
+    user_email=  models.EmailField(max_length=70,default="gaurav.chaturvedi@squadrun.co")
+    client_secret_file=JSONField()
+
+    
     @classmethod
     def get_credentials(self,email):
 
-        credentials_db=Credentials_db.objects.get(user_email=email)
+        Credentials_data=CredentialsDB.objects.get(user_email=email)
         credentials={
-            "token":credentials_db.token,
-            "refresh_token":credentials_db.refresh_token,
-            "client_secret":credentials_db.client_secret,
-            "client_id":credentials_db.client_id,
+            "token":Credentials_data.token,
+            "refresh_token":Credentials_data.refresh_token,
+            "client_secret":Credentials_data.client_secret,
+            "client_id":Credentials_data.client_id,
             "token_uri":"https://oauth2.googleapis.com/token"
         }
         cred_obj= Credentials(**credentials)
@@ -35,10 +41,21 @@ class Credentials_db(models.Model):
 
     @classmethod
     def save_new_credential(self,email):
-        flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", scopes=scopes)
-        credentials = flow.run_console()
-        new_credential= Credentials_db.objects.create(user_email=email,token=credentials.token,refresh_token=credentials.refresh_token,client_id=credentials.client_id,client_secret=credentials.client_secret)
-        new_credential.save()
+        scopes = ['https://www.googleapis.com/auth/calendar']
+        try:
+            client_data=CredentialsDB.objects.get(user_email=email)
+            print(client_data)
+            client_secret_data=client_data.client_secret_file
+            print("json",client_secret_data)
+        except CredentialsDB.DoesNotExist:
+            print("have to figure out what to do yha p")
+        print("flow started")
+        flow = InstalledAppFlow.from_client_config(client_secret_data, scopes=scopes)
+        credentials = flow.run_local_server()
+        # new_credential= CredentialsDB.objects.create(user_email=email,token=credentials.token,refresh_token=credentials.refresh_token,client_id=credentials.client_id,client_secret=credentials.client_secret)
+        new_credential,created= CredentialsDB.objects.update_or_create(user_email=email,token=credentials.token,refresh_token=credentials.refresh_token,client_id=credentials.client_id,client_secret=credentials.client_secret,client_secret_file=client_secret_data)
+        
+        # new_credential.save()
 
 
     
@@ -51,7 +68,7 @@ class Userdata(models.Model):
         return self.Username
 
 class Availabledata(models.Model):
-    userID=models.ForeignKey(Userdata,db_column="userID")
+    userID=models.ForeignKey(Userdata)
     available_start_time =models.DateTimeField()
     available_end_time =models.DateTimeField()
     event_id = models.CharField(max_length=100,blank=True,null=True)
@@ -75,11 +92,15 @@ class Availabledata(models.Model):
 
     @classmethod
     def event_data(self,email):
-        scopes = ['https://www.googleapis.com/auth/calendar']
-        user_exist=Credentials_db.objects.get(user_email=email)
-        if not user_exist:
-            Credentials_db.save_new_credential(email)    
-        cred_obj= Credentials_db.get_credentials(email)
+        
+        try:
+            user_exist= CredentialsDB.objects.get(user_email=email)
+        except CredentialsDB.DoesNotExist:
+            CredentialsDB.save_new_credential(email)
+        if not user_exist.token:
+            CredentialsDB.save_new_credential(email)
+
+        cred_obj= CredentialsDB.get_credentials(email)
         timemin = self.return_dates(10,'subtract')
         timeMax = self.return_dates(10,'add') 
         service = build('calendar', 'v3', credentials=cred_obj)
@@ -128,7 +149,7 @@ class Assignementdata(models.Model):
         end_time=self.assigned_end_time.isoformat()
 
         scopes = ['https://www.googleapis.com/auth/calendar']
-        credentials = Credentials_db.get_credentials(email)
+        credentials = CredentialsDB.get_credentials(email)
         service = build("calendar", "v3", credentials=credentials)
         event = {
             'summary': 'Meeting Sceduled',
