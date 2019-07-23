@@ -19,9 +19,7 @@ class CredentialsDB(models.Model):
 
     token=models.CharField(max_length=500,null=True,blank=True)
     refresh_token=models.CharField(max_length=500,null=True,blank=True)
-    client_secret=models.CharField(max_length=500,null=True,blank=True)
-    client_id=models.CharField(max_length=500,null=True,blank=True)
-    user_email=  models.EmailField(max_length=70,default="gaurav.chaturvedi@squadrun.co")
+    user_email=  models.EmailField(max_length=70,unique=True,default="gaurav.chaturvedi@squadrun.co")
     client_secret_file=JSONField()
 
     
@@ -32,9 +30,9 @@ class CredentialsDB(models.Model):
         credentials={
             "token":Credentials_data.token,
             "refresh_token":Credentials_data.refresh_token,
-            "client_secret":Credentials_data.client_secret,
-            "client_id":Credentials_data.client_id,
-            "token_uri":"https://oauth2.googleapis.com/token"
+            "client_secret":Credentials_data.client_secret_file["installed"]["client_secret"],
+            "client_id":Credentials_data.client_secret_file["installed"]["client_id"],
+            "token_uri":Credentials_data.client_secret_file["installed"]["token_uri"]
         }
         cred_obj= Credentials(**credentials)
         return cred_obj
@@ -44,18 +42,17 @@ class CredentialsDB(models.Model):
         scopes = ['https://www.googleapis.com/auth/calendar']
         try:
             client_data=CredentialsDB.objects.get(user_email=email)
-            print(client_data)
             client_secret_data=client_data.client_secret_file
-            print("json",client_secret_data)
         except CredentialsDB.DoesNotExist:
             print("have to figure out what to do yha p")
-        print("flow started")
         flow = InstalledAppFlow.from_client_config(client_secret_data, scopes=scopes)
-        credentials = flow.run_local_server()
-        # new_credential= CredentialsDB.objects.create(user_email=email,token=credentials.token,refresh_token=credentials.refresh_token,client_id=credentials.client_id,client_secret=credentials.client_secret)
-        new_credential,created= CredentialsDB.objects.update_or_create(user_email=email,token=credentials.token,refresh_token=credentials.refresh_token,client_id=credentials.client_id,client_secret=credentials.client_secret,client_secret_file=client_secret_data)
         
-        # new_credential.save()
+        credentials = flow.run_local_server()
+
+        new_credential,created= CredentialsDB.objects.update_or_create(user_email=email,
+        client_secret_file=client_secret_data,defaults={"token":credentials.token,"refresh_token":credentials.refresh_token})
+
+        
 
 
     

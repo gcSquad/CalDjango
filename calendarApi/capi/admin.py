@@ -15,7 +15,7 @@ class AssignementAdmin(admin.ModelAdmin):
     exclude=('event_id',)
 
 class CredentialsAdmin(admin.ModelAdmin):
-    list_display=('user_email','token','refresh_token','client_secret','client_id')   
+    list_display=('user_email','token','refresh_token','client_secret_file')   
 
 admin.site.register(Userdata,UserdataAdmin)
 admin.site.register(Availabledata,AvailabledataAdmin)
