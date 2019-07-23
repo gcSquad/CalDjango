@@ -20,7 +20,7 @@ class CredentialsDB(models.Model):
 
     token=models.CharField(max_length=500,null=True,blank=True)
     refresh_token=models.CharField(max_length=500,null=True,blank=True)
-    user_email=  models.EmailField(max_length=70,unique=True,default="gaurav.chaturvedi@squadrun.co")
+    user_email=  models.EmailField(max_length=70,unique=True)
     client_secret_file=JSONField()
 
     class Meta:
@@ -30,13 +30,13 @@ class CredentialsDB(models.Model):
     @classmethod
     def get_credentials(self,email):
 
-        Credentials_data=CredentialsDB.objects.get(user_email=email)
+        credentials_data=CredentialsDB.objects.get(user_email=email)
         credentials={
-            "token":Credentials_data.token,
-            "refresh_token":Credentials_data.refresh_token,
-            "client_secret":Credentials_data.client_secret_file["installed"]["client_secret"],
-            "client_id":Credentials_data.client_secret_file["installed"]["client_id"],
-            "token_uri":Credentials_data.client_secret_file["installed"]["token_uri"]
+            "token":credentials_data.token,
+            "refresh_token":credentials_data.refresh_token,
+            "client_secret":credentials_data.client_secret_file["installed"]["client_secret"],
+            "client_id":credentials_data.client_secret_file["installed"]["client_id"],
+            "token_uri":credentials_data.client_secret_file["installed"]["token_uri"]
         }
         cred_obj= Credentials(**credentials)
         return cred_obj

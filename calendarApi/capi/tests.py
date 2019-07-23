@@ -21,14 +21,14 @@ class UserFactory(factory.django.DjangoModelFactory):
 class AvailabledataFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Availabledata
-    userID=factory.SubFactory(UserFactory)
+    user=factory.SubFactory(UserFactory)
     available_start_time=timezone.now()-datetime.timedelta(hours=1)
     available_end_time=timezone.now()+datetime.timedelta(hours=3)
 
 class AssignementFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Assignementdata
-    userID=factory.SubFactory(UserFactory)
+    user=factory.SubFactory(UserFactory)
     assigned_start_time=timezone.now()
     assigned_end_time=timezone.now()+datetime.timedelta(hours=3)
 
@@ -38,14 +38,14 @@ class Assignementdata_test(TestCase):
         user=UserFactory()
         time_start= timezone.now()
         time_end = timezone.now() + datetime.timedelta(days=1)
-        checktime = Assignementdata(userID=user,assigned_start_time=time_start,assigned_end_time=time_end)
+        checktime = Assignementdata(user=user,assigned_start_time=time_start,assigned_end_time=time_end)
         self.assertIs(checktime.validate_entered_time(), True)
 
     def test_check_user_availability(self):
-        user=AvailabledataFactory().userID
+        user=AvailabledataFactory().user
         time_start= timezone.now()
         time_end = timezone.now() + datetime.timedelta(hours=1)
-        check_availability = Assignementdata(userID=user,assigned_start_time=time_start,assigned_end_time=time_end)
+        check_availability = Assignementdata(user=user,assigned_start_time=time_start,assigned_end_time=time_end)
         self.assertIs(check_availability.check_user_availability(), True)
 
     # @patch(Assignementdata.insert_api_call)
@@ -58,9 +58,11 @@ class Assignementdata_test(TestCase):
 class Availabledata_test(TestCase):
 
     def test_return_user_by_email(self):
+        
+        user=Userdata.objects.create(userID= 1,personal_email="gauarv.chaturvedi@squadrun.co",
+        Username = "Gaurav")
         userlist=Userdata.objects.all()
-        email="gauarv.pg007@gmail.com"
-        user=Userdata.objects.get(personal_email="gauarv.pg007@gmail.com")
-        print(user)
-        self.assertIs(user.return_user_by_email(email,userlist),user)
+        email="gauarv.chaturvedi@squadrun.co"
+        user=Userdata.objects.get(personal_email="gauarv.chaturvedi@squadrun.co")
+        self.assertIs(Availabledata.return_user_by_email(email,userlist),user)
 

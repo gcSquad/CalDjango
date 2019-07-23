@@ -8,7 +8,7 @@
       function apireq(){
         var user_id=""
         $.ajax({
-                 url : "http://127.0.0.1:8000/userapi",
+                 url : "http://127.0.0.1:8000/capi/userapi",
                  dataType: "json",
                  success : function (data) {
                           for (var i=0;i<data.length;i++){
@@ -19,14 +19,15 @@
                           }
                         }
                      });
-                     $.ajax({
-                 url : "http://127.0.0.1:8000/assignmentapi",
+                    setTimeout($.ajax({
+                 url : "http://127.0.0.1:8000/capi/assignmentapi",
                  dataType: "json",
                  success : function (data) {
+                          var text=""
                           for (var i=0;i<data.length;i++){
-                            if(data[i].userID == user_id)
+                            if(data[i].user== user_id)
                             { 
-                              var text=data[i].assigned_start_time+"   "+data[i].assigned_end_time;
+                              text+=data[i].assigned_start_time+"   "+data[i].assigned_end_time;
                               $("#api_data").text(text)
                             }
                             }
@@ -34,7 +35,7 @@
                               $("#api_data").text("You can have a rest day!! Chilllll!!!")
                             }
                         }
-                     });
+                     }),3000)
       }
     </script>
   <body>
