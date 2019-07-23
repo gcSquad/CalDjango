@@ -70,13 +70,14 @@ class Availabledata(models.Model):
     available_end_time =models.DateTimeField()
     event_id = models.CharField(max_length=100,blank=True,null=True)
 
-    @classmethod
-    def return_userby_email(self,email,userlist):
+    @staticmethod
+    def return_userby_email(email,userlist):
         for user in userlist:
             if(user.personal_email == email):
                 return user
-    @classmethod
-    def return_dates(self,days_delta,operator):
+                
+    @staticmethod
+    def return_dates(days_delta,operator):
 
         tz = pytz.timezone('Asia/Kolkata')
         if operator == 'add':
