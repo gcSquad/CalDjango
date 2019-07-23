@@ -12,6 +12,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from django.contrib.postgres.fields import JSONField
 from django.core.files import File
 import json
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from google.oauth2.credentials import Credentials
 
@@ -189,7 +190,12 @@ class Assignementdata(models.Model):
                 if self.assigned_start_time >= slot_available_start_time and self.assigned_end_time < slot_available_end_time:
                     valid_count =valid_count+1
             return valid_count >0
-                
+
+    def clean(self):
+        user_available = self.check_user_availability()
+        if not user_available:
+            raise ValidationError(('Selected User is not available for given time slot!!'))
+
 
     def save(self,*args,**kwargs):
 
@@ -201,8 +207,7 @@ class Assignementdata(models.Model):
             else:
                 super(Assignementdata,self).save(*args,**kwargs)
                 transaction.on_commit(lambda:setappointment.delay(self.id))
-        else:
-            print("The timeslots entered is not correct for given user")
+        
 
         
         
