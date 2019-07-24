@@ -1,12 +1,17 @@
-{% extends 'base.html' %}
-
-{% block title %}Login{% endblock %}
-
-{% block content %}
-  <h2>Login</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Login</button>
-  </form>
-{% endblock %}
+<HTML>
+<HEADER>
+    <TITLE>Login</TITLE>
+</HEADER>
+<BODY>
+        <FORM id="login_form" method="post" action="/capi/login/">
+        {% csrf_token %}
+                Username:
+                <input type="text" name="username" value="" id="username" size="50" />
+            <br />
+                Password:
+                <input type="password" name="password" value="" id="password" size="50" />
+                <br />
+        <INPUT type="submit" name="submit" value="submit" />
+        </FORM>
+</BODY>
+</HTML>
