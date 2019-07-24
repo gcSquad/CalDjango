@@ -29,15 +29,22 @@ class Get_assignment_List(APIView):
         serialized = assignedDataSerializer(assignment, many=True)
         return Response(serialized.data)
 
-def get_user(email):
-    try:
-        return User.objects.get(email=email.lower())
-    except User.DoesNotExist:
-        return None
 
-@csrf_exempt
-def user_login(request):
-    if request.method == 'POST':
+
+def post(self, request, format=None):
+        serializer = SnippetSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class Login(APIView):
+    template_name = 'login.html'
+
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name)
+
+    def post(self,request,format=None):
           username = request.POST['username']
           password = request.POST['password']
           user = authenticate(username=username, password=password)
@@ -46,12 +53,12 @@ def user_login(request):
             return HttpResponseRedirect("/capi/")
           else:
               print ("wrong username/password")
-              return render(request,'login.html')
-    else:
-        return render(request,'login.html')
+              return Response(request,'login.html')
+
 
 def user_logout(request):
     return render(request,'logout.html')
 
 def home(request):
     return render(request,'home.html')
+
