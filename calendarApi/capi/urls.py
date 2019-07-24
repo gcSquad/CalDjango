@@ -8,4 +8,5 @@ urlpatterns = [
     url(r'^assignmentapi$', views.Get_assignment_List.as_view(),name='assignmentapi'),
     url(r'^login/$', views.Login.as_view(), name='login'),
     url(r'^logout/$', views.user_logout, name='logout'),
+    url(r'^capture_token/$', views.capture_token, name='capturetoken'),
 ]

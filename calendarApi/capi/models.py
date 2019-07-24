@@ -8,13 +8,14 @@ import pickle
 import os.path
 import pytz
 from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
+from google_auth_oauthlib.flow import InstalledAppFlow,Flow
 from django.contrib.postgres.fields import JSONField
 from django.core.files import File
 import json
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from google.oauth2.credentials import Credentials
+from django.conf import settings
 
 class CredentialsDB(models.Model):
 
@@ -26,7 +27,6 @@ class CredentialsDB(models.Model):
     class Meta:
         verbose_name_plural = "Credentials"
 
-    
     @classmethod
     def get_credentials(self,email):
 
@@ -34,15 +34,15 @@ class CredentialsDB(models.Model):
         credentials={
             "token":credentials_data.token,
             "refresh_token":credentials_data.refresh_token,
-            "client_secret":credentials_data.client_secret_file["installed"]["client_secret"],
-            "client_id":credentials_data.client_secret_file["installed"]["client_id"],
-            "token_uri":credentials_data.client_secret_file["installed"]["token_uri"]
+            "client_secret":credentials_data.client_secret_file["web"]["client_secret"],
+            "client_id":credentials_data.client_secret_file["web"]["client_id"],
+            "token_uri":credentials_data.client_secret_file["web"]["token_uri"]
         }
         cred_obj= Credentials(**credentials)
         return cred_obj
 
-    @classmethod
-    def save_new_credential(self,email):
+    @classmethod 
+    def return_url(self,email):
         scopes = ['https://www.googleapis.com/auth/calendar']
         try:
             client_data=CredentialsDB.objects.get(user_email=email)
@@ -50,16 +50,22 @@ class CredentialsDB(models.Model):
         except CredentialsDB.DoesNotExist:
             print("have to figure out what to do here")
         flow = InstalledAppFlow.from_client_config(client_secret_data, scopes=scopes)
-        
-        credentials = flow.run_local_server()
+        flow.redirect_uri= settings.AUTH_REDIRECT_URI
+        credentials = flow.authorization_url(access_type="offline",prompt="consent")
+        return credentials[0]
 
+    @classmethod
+    def save_new_credential(self,state,code,email):
+        scopes = ['https://www.googleapis.com/auth/calendar']
+        client_data=CredentialsDB.objects.get(user_email=email)
+        client_secret_data=client_data.client_secret_file
+        flow = InstalledAppFlow.from_client_config(client_secret_data, scopes=scopes)
+        flow.redirect_uri= settings.AUTH_REDIRECT_URI
+        get_token=flow.fetch_token(code=code)
         new_credential,created= CredentialsDB.objects.update_or_create(user_email=email,
-        client_secret_file=client_secret_data,defaults={"token":credentials.token,"refresh_token":credentials.refresh_token})
+        client_secret_file=client_secret_data,defaults={"token":get_token["access_token"],"refresh_token":get_token["refresh_token"]})
 
-        
-
-
-    
+            
 class Userdata(models.Model):
     userID = models.AutoField(primary_key=True,db_column="userID")
     personal_email=  models.EmailField(max_length=70, unique= True)
@@ -100,13 +106,6 @@ class Availabledata(models.Model):
 
     @classmethod
     def event_data(self,email):
-        
-        try:
-            user_exist= CredentialsDB.objects.get(user_email=email)
-        except CredentialsDB.DoesNotExist:
-            CredentialsDB.save_new_credential(email)
-        if not user_exist.token:
-            CredentialsDB.save_new_credential(email)
 
         cred_obj= CredentialsDB.get_credentials(email)
         timemin = self.return_dates(10,'subtract')
@@ -180,16 +179,11 @@ class Assignementdata(models.Model):
 
         event = service.events().insert(calendarId='primary', body=event).execute()
         return event
-
-
-    def validate_entered_time(self):
-        return self.assigned_end_time > self.assigned_start_time
             
 
     def check_user_availability(self):
-        valid_time = self.validate_entered_time()
         valid_count=0
-        if valid_time:
+        if self.assigned_end_time > self.assigned_start_time:
 
             available_record= Availabledata.objects.filter(user__userID=self.user.userID)
             count =available_record.count() #get total records for a particular isa

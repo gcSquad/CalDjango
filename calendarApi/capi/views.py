@@ -3,7 +3,7 @@ from __future__ import print_function
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect,render
 from django.urls import reverse
-from .models import Availabledata,Userdata,Assignementdata
+from .models import Availabledata,Userdata,Assignementdata,CredentialsDB
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, login
@@ -11,7 +11,32 @@ from django.contrib.auth.models import User
 from .serializers import userSerializer,assignedDataSerializer
 from django.views.decorators.csrf import csrf_exempt
 
+
+def redirect_to_auth_url(email):
+    url=CredentialsDB.return_url(email)
+    return redirect(url)
+
+def capture_token(request):
+    state=request.GET["state"]
+    code=request.GET["code"]
+    CredentialsDB.save_new_credential(state=state,code=code,email=request.user.email)
+    return redirect('/admin/capi/availabledata')
+
+def capture_token(request):
+    state=request.GET["state"]
+    code=request.GET["code"]
+    CredentialsDB.save_new_credential(state=state,code=code,email=request.user.email)
+    return redirect('/admin/capi/availabledata')
+
 def import_data(request):
+    try:
+        user_exist= CredentialsDB.objects.get(user_email=request.user.email)
+    except CredentialsDB.DoesNotExist:
+        print("Please create User !!!!")
+        return redirect('/admin/capi/availabledata')
+    if not user_exist.token:
+        return redirect_to_auth_url(request.user.email)
+
     Availabledata.event_data(request.user.email)  
     return redirect('/admin/capi/availabledata')   
         # return HttpResponseRedirect(reverse('import_data'))
@@ -52,4 +77,5 @@ def user_logout(request):
 
 def home(request):
     return render(request,'home.html')
+
 

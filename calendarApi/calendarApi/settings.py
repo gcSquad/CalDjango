@@ -25,7 +25,7 @@ SECRET_KEY = 'v+&r-hniwy063lb1qkfn)5jw*=cp7_44x-nftn=#iku!42s8mb'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [u'127.0.0.1']
+ALLOWED_HOSTS = [u'127.0.0.1',u'localhost',u'87e9880f.ngrok.io']
 
 
 # Application definition
@@ -142,3 +142,5 @@ CELERY_RESULT_SERIALIZER = 'json'
 #     ]
 # }
 LOGIN_REDIRECT_URL = 'home'
+
+AUTH_REDIRECT_URI="http://87e9880f.ngrok.io/capi/capture_token"
