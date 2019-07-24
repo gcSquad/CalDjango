@@ -44,7 +44,7 @@ class Login(APIView):
             return HttpResponseRedirect("/capi/")
           else:
               print ("wrong username/password")
-              return Response(request,'login.html')
+              return Response(request,self.template_name)
 
 
 def user_logout(request):
