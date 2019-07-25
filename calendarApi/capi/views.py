@@ -3,43 +3,37 @@ from __future__ import print_function
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect,render
 from django.urls import reverse
-from .models import Availabledata,Userdata,Assignementdata,CredentialsDB
+from .models import Availabledata,Userdata,Assignementdata,Credential
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from .serializers import userSerializer,assignedDataSerializer
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib import messages
 
-
-def redirect_to_auth_url(email):
-    url=CredentialsDB.return_url(email)
-    return redirect(url)
 
 def capture_token(request):
     state=request.GET["state"]
     code=request.GET["code"]
-    CredentialsDB.save_new_credential(state=state,code=code,email=request.user.email)
-    return redirect('/admin/capi/availabledata')
-
-def capture_token(request):
-    state=request.GET["state"]
-    code=request.GET["code"]
-    CredentialsDB.save_new_credential(state=state,code=code,email=request.user.email)
-    return redirect('/admin/capi/availabledata')
+    #handle error
+    Credential.save_captured_token(state=state,code=code,email=request.user.email)
+    return HttpResponseRedirect(reverse('admin:capi_availabledata_changelist'))
 
 def import_data(request):
     try:
-        user_exist= CredentialsDB.objects.get(user_email=request.user.email)
-    except CredentialsDB.DoesNotExist:
-        print("Please create User !!!!")
-        return redirect('/admin/capi/availabledata')
-    if not user_exist.token:
-        return redirect_to_auth_url(request.user.email)
+        user_credentials= Credential.objects.get(user_email=request.user.email)
+    except Credential.DoesNotExist:
+        messages.error(request,'Please create a user with necessary credentials !!')
+        return HttpResponseRedirect(reverse('admin:capi_availabledata_changelist'))
+    if not user_credentials.token:
+        auth_url_for_access_token=user_credentials.return_auth_url()
+        return redirect(auth_url_for_access_token)
 
-    Availabledata.event_data(request.user.email)  
-    return redirect('/admin/capi/availabledata')   
-        # return HttpResponseRedirect(reverse('import_data'))
+    events = user_credentials.import_fresh_available_data()
+    Availabledata.save_new_events_db(events)
+    return HttpResponseRedirect(reverse('admin:capi_availabledata_changelist'))
+
 
 class Get_user_List(APIView):
     def get(self, request):

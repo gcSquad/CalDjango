@@ -6,64 +6,88 @@ from tasks import setappointment
 import datetime   
 import pickle
 import os.path
-import pytz
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow,Flow
 from django.contrib.postgres.fields import JSONField
 from django.core.files import File
+from django.urls import reverse
 import json
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from google.oauth2.credentials import Credentials
 from django.conf import settings
+from utils import return_dates_in_isoformat
 
-class CredentialsDB(models.Model):
+class Credential(models.Model):
 
     token=models.CharField(max_length=500,null=True,blank=True)
     refresh_token=models.CharField(max_length=500,null=True,blank=True)
     user_email=  models.EmailField(max_length=70,unique=True)
     client_secret_file=JSONField()
+    state=models.CharField(max_length=500,null=True,blank=True)
 
     class Meta:
         verbose_name_plural = "Credentials"
 
-    @classmethod
-    def get_credentials(self,email):
-
-        credentials_data=CredentialsDB.objects.get(user_email=email)
+    def get_credentials(self):
         credentials={
-            "token":credentials_data.token,
-            "refresh_token":credentials_data.refresh_token,
-            "client_secret":credentials_data.client_secret_file["web"]["client_secret"],
-            "client_id":credentials_data.client_secret_file["web"]["client_id"],
-            "token_uri":credentials_data.client_secret_file["web"]["token_uri"]
+            "token":self.token,
+            "refresh_token":self.refresh_token,
+            "client_secret":self.client_secret_file["web"]["client_secret"],
+            "client_id":self.client_secret_file["web"]["client_id"],
+            "token_uri":self.client_secret_file["web"]["token_uri"]
         }
         cred_obj= Credentials(**credentials)
         return cred_obj
-
-    @classmethod 
-    def return_url(self,email):
+ 
+    def return_auth_url(self):
         scopes = ['https://www.googleapis.com/auth/calendar']
-        try:
-            client_data=CredentialsDB.objects.get(user_email=email)
-            client_secret_data=client_data.client_secret_file
-        except CredentialsDB.DoesNotExist:
-            print("have to figure out what to do here")
+
+        client_secret_data=self.client_secret_file
         flow = InstalledAppFlow.from_client_config(client_secret_data, scopes=scopes)
-        flow.redirect_uri= settings.AUTH_REDIRECT_URI
-        credentials_url = flow.authorization_url(access_type="offline",prompt="consent")
-        return credentials_url[0]
+        flow.redirect_uri= settings.AUTH_REDIRECT_URI+reverse('capture_token')
+        auth_url_and_state = flow.authorization_url(access_type="offline",prompt="consent")
+
+        self.state = auth_url_and_state[1]
+        self.save()
+
+        return auth_url_and_state[0]
+
+    def import_fresh_available_data(self):
+
+        credential_object= self.get_credentials()
+        events = self.get_all_events_for_admin(credential_object)
+        
+        return events
+
+    def get_all_events_for_admin(self,credential_object):
+        
+        time_min = return_dates_in_isoformat(2,'subtract')
+        time_max = return_dates_in_isoformat(2,'add') 
+
+        service = build('calendar', 'v3', credentials=credential_object)
+        events_result = service.events().list(calendarId='primary',singleEvents=True,timeMin=time_min,timeMax=time_max,orderBy='startTime').execute()
+
+        events = events_result.get('items', [])
+        return events
 
     @classmethod
-    def save_new_credential(self,code,email):
+    def save_captured_token(cls,state,code,email):
         scopes = ['https://www.googleapis.com/auth/calendar']
-        client_data=CredentialsDB.objects.get(user_email=email)
+
+        client_data=Credential.objects.get(state=state)
         client_secret_data=client_data.client_secret_file
         flow = InstalledAppFlow.from_client_config(client_secret_data, scopes=scopes)
-        flow.redirect_uri= settings.AUTH_REDIRECT_URI
-        get_token=flow.fetch_token(code=code)
-        new_credential,created= CredentialsDB.objects.update_or_create(user_email=email,
-        client_secret_file=client_secret_data,defaults={"token":get_token["access_token"],"refresh_token":get_token["refresh_token"]})
+        flow.redirect_uri= settings.AUTH_REDIRECT_URI+reverse('capture_token')
+        
+        recieved_token=flow.fetch_token(code=code)
+
+        new_credential,created = Credential.objects.update_or_create(user_email=email,
+        client_secret_file = client_secret_data,defaults={"token":recieved_token["access_token"],"refresh_token":recieved_token["refresh_token"]})
+
+    
+
+
 
             
 class Userdata(models.Model):
@@ -85,51 +109,27 @@ class Availabledata(models.Model):
 
     class Meta:
         verbose_name_plural = "availableData"
-
-    @staticmethod
-    def return_userby_email(email,userlist):
-        for user in userlist:
-            if(user.personal_email == email):
-                return user
                 
-    @staticmethod
-    def return_dates(days_delta,operator):
-
-        tz = pytz.timezone('Asia/Kolkata')
-        if operator == 'add':
-            required_datetime = datetime.datetime.now()+datetime.timedelta(days=days_delta)
-        elif operator == 'subtract':
-            required_datetime = datetime.datetime.now()-datetime.timedelta(days=days_delta)
-
-        date_in_required_format = tz.localize(required_datetime).replace(microsecond=0).isoformat()
-        return date_in_required_format  #'2019-07-15T06:42:29+05:30
-
     @classmethod
-    def event_data(self,email):
-
-        cred_obj= CredentialsDB.get_credentials(email)
-        timemin = self.return_dates(10,'subtract')
-        timeMax = self.return_dates(10,'add') 
-        service = build('calendar', 'v3', credentials=cred_obj)
-        events_result = service.events().list(calendarId='primary',singleEvents=True,timeMin=timemin,timeMax=timeMax,orderBy='startTime').execute()
-        events = events_result.get('items', [])
-        event_in_db =list(Availabledata.objects.values_list('event_id',flat=True))
+    def save_new_events_db(cls,events):
+        total_event_list =list(Availabledata.objects.values_list('event_id',flat=True))
         users_in_db =list(Userdata.objects.all())
-        user_email_list=[]
+        user_email_list={}
         new_records=[]
+
         for users in users_in_db:
-            user_email_list.append(users.personal_email)   
+            user_email_list.update({users.personal_email:users}) 
+              
         for event in events:
-             if  event['id'] not in event_in_db and event['creator']['email'] in user_email_list:
-                user=self.return_userby_email(event['creator']['email'],users_in_db)
-                new_object= self(event_id=event['id'],user=user,
+             if  event['id'] not in total_event_list and event['creator']['email'] in user_email_list:
+                user=user_email_list[event['creator']['email']]
+                new_object= cls(event_id=event['id'],user=user,
                                 available_end_time=event['end']['dateTime'],
                                 available_start_time=event['start']['dateTime']
                                 )
 
                 new_records.append(new_object)
-        self.objects.bulk_create(new_records)
-        return
+        cls.objects.bulk_create(new_records)
 
     
 
@@ -147,17 +147,20 @@ class Assignementdata(models.Model):
         verbose_name_plural = "assignmentData"
 
     def save_calendar_event(self):
+
         event=self.insert_api_call()
         self.event_id=event['id']
+
         self.save(test_flag=True)
 
     def insert_api_call(self):
+        
         email=self.user.personal_email
         start_time=self.assigned_start_time.isoformat()
         end_time=self.assigned_end_time.isoformat()
 
         scopes = ['https://www.googleapis.com/auth/calendar']
-        credentials = CredentialsDB.get_credentials(email)
+        credentials = Credential.get_credentials(email)
         service = build("calendar", "v3", credentials=credentials)
         event = {
             'summary': 'Meeting Sceduled',

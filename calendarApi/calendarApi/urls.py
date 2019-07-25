@@ -22,6 +22,5 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^capi/', include('capi.urls')),
 
-
     
 ]

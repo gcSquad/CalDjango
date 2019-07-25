@@ -7,7 +7,7 @@ from faker import Faker
 import random  
 import unittest
 import factory
-from .models import Assignementdata,Availabledata,Userdata,CredentialsDB
+from .models import Assignementdata,Availabledata,Userdata,Credential
 from mock import Mock, patch
 
 
@@ -34,7 +34,7 @@ class AssignementFactory(factory.django.DjangoModelFactory):
 
 class CredentialsDBFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = CredentialsDB
+        model = Credential
     token="ya29.GltPB_fBqmTiFQZYvht1OfBZVjiTGeou7IJqfeEhnnYxClIOOdng3CYWDMgLUFyLt9vy49ltdo9gcfp3TagXO0Ofamky9dDyAqRP9YYj5VaZ9W38dgH6BOgwB68Y",
     refresh_token="1/wfAVNa-4VmsnZN8ct46eGCi2Hd4b1dm3ZseUvCMad34",
     user_email="gaurav.chaturvedi@squadrun.co",
@@ -72,7 +72,7 @@ class Availabledata_test(TestCase):
     
     def test_event_data(self):
         prev_count=Availabledata.objects.all().count()
-        CredentialsDB.objects.create( token="ya29.GltPB_fBqmTiFQZYvht1OfBZVjiTGeou7IJqfeEhnnYxClIOOdng3CYWDMgLUFyLt9vy49ltdo9gcfp3TagXO0Ofamky9dDyAqRP9YYj5VaZ9W38dgH6BOgwB68Y",
+        Credential.objects.create( token="ya29.GltPB_fBqmTiFQZYvht1OfBZVjiTGeou7IJqfeEhnnYxClIOOdng3CYWDMgLUFyLt9vy49ltdo9gcfp3TagXO0Ofamky9dDyAqRP9YYj5VaZ9W38dgH6BOgwB68Y",
         refresh_token="1/wfAVNa-4VmsnZN8ct46eGCi2Hd4b1dm3ZseUvCMad34",
         user_email="gaurav.chaturvedi@squadrun.co",
         client_secret_file={"web": {"auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs", "redirect_uris": ["http://localhost:80", "http://87e9880f.ngrok.io/capi/capture_token"], "token_uri": "https://oauth2.googleapis.com/token", "javascript_origins": ["http://localhost:8080", "http://localhost:8000"], "auth_uri": "https://accounts.google.com/o/oauth2/auth", "client_id": "1011984601039-2aqu7si3gikf2h432rol61p6vn6chb5t.apps.googleusercontent.com", "client_secret": "CMokexzjmSigrMLvoj9LQgbR", "project_id": "calenderapi-246115"}}
@@ -92,17 +92,17 @@ class CredentialDB_test(TestCase):
 
 
     def test_return_url(self):
-        CredentialsDB.objects.create(
+        Credential.objects.create(
         user_email="test@squadrun.co",
         client_secret_file={"web": {"auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs", "redirect_uris": ["http://localhost:80", "http://87e9880f.ngrok.io/capi/capture_token"], "token_uri": "https://oauth2.googleapis.com/token", "javascript_origins": ["http://localhost:8080", "http://localhost:8000"], "auth_uri": "https://accounts.google.com/o/oauth2/auth", "client_id": "1011984601039-2aqu7si3gikf2h432rol61p6vn6chb5t.apps.googleusercontent.com", "client_secret": "CMokexzjmSigrMLvoj9LQgbR", "project_id": "calenderapi-246115"}}
         )
-        test=CredentialsDB.return_url(email="test@squadrun.co")
+        test=Credential.return_url(email="test@squadrun.co")
         test_url=test.encode('ascii','ignore')
         self.assertIs(len(test_url) >100,True)
 
     @patch('google_auth_oauthlib.flow.Flow.fetch_token')
     def test_save_new_credential(self,mock_fetch_token):
-        CredentialsDB.objects.create(
+        Credential.objects.create(
         user_email="test@squadrun.co",
         client_secret_file={"web": {"auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs", "redirect_uris": ["http://localhost:80", "http://87e9880f.ngrok.io/capi/capture_token"], "token_uri": "https://oauth2.googleapis.com/token", "javascript_origins": ["http://localhost:8080", "http://localhost:8000"], "auth_uri": "https://accounts.google.com/o/oauth2/auth", "client_id": "1011984601039-2aqu7si3gikf2h432rol61p6vn6chb5t.apps.googleusercontent.com", "client_secret": "CMokexzjmSigrMLvoj9LQgbR", "project_id": "calenderapi-246115"}}
         )
@@ -110,8 +110,8 @@ class CredentialDB_test(TestCase):
             "access_token":"jkdhfjkdsf",
             "refresh_token":"SDFFDGDfgdjkfngmdfngdSDs"
         }
-        CredentialsDB.save_new_credential(code="code",email="test@squadrun.co")
-        test=CredentialsDB.objects.get(user_email="test@squadrun.co")
+        Credential.save_new_credential(code="code",email="test@squadrun.co")
+        test=Credential.objects.get(user_email="test@squadrun.co")
         self.assertEqual(test.token,"jkdhfjkdsf")
 
 
