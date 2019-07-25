@@ -51,11 +51,11 @@ class CredentialsDB(models.Model):
             print("have to figure out what to do here")
         flow = InstalledAppFlow.from_client_config(client_secret_data, scopes=scopes)
         flow.redirect_uri= settings.AUTH_REDIRECT_URI
-        credentials = flow.authorization_url(access_type="offline",prompt="consent")
-        return credentials[0]
+        credentials_url = flow.authorization_url(access_type="offline",prompt="consent")
+        return credentials_url[0]
 
     @classmethod
-    def save_new_credential(self,state,code,email):
+    def save_new_credential(self,code,email):
         scopes = ['https://www.googleapis.com/auth/calendar']
         client_data=CredentialsDB.objects.get(user_email=email)
         client_secret_data=client_data.client_secret_file
@@ -102,7 +102,7 @@ class Availabledata(models.Model):
             required_datetime = datetime.datetime.now()-datetime.timedelta(days=days_delta)
 
         date_in_required_format = tz.localize(required_datetime).replace(microsecond=0).isoformat()
-        return date_in_required_format
+        return date_in_required_format  #'2019-07-15T06:42:29+05:30
 
     @classmethod
     def event_data(self,email):
@@ -111,9 +111,7 @@ class Availabledata(models.Model):
         timemin = self.return_dates(10,'subtract')
         timeMax = self.return_dates(10,'add') 
         service = build('calendar', 'v3', credentials=cred_obj)
-
         events_result = service.events().list(calendarId='primary',singleEvents=True,timeMin=timemin,timeMax=timeMax,orderBy='startTime').execute()
-
         events = events_result.get('items', [])
         event_in_db =list(Availabledata.objects.values_list('event_id',flat=True))
         users_in_db =list(Userdata.objects.all())
