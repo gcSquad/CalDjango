@@ -90,7 +90,7 @@ class Credential(models.Model):
 
 
             
-class Userdata(models.Model):
+class UserData(models.Model):
     userID = models.AutoField(primary_key=True,db_column="userID")
     personal_email=  models.EmailField(max_length=70, unique= True)
     Username = models.CharField(max_length=120)
@@ -101,8 +101,8 @@ class Userdata(models.Model):
     def __unicode__(self):
         return self.Username
 
-class Availabledata(models.Model):
-    user=models.ForeignKey(Userdata)
+class AvailableData(models.Model):
+    user=models.ForeignKey(UserData)
     available_start_time =models.DateTimeField()
     available_end_time =models.DateTimeField()
     event_id = models.CharField(max_length=100,blank=True,null=True)
@@ -112,8 +112,8 @@ class Availabledata(models.Model):
                 
     @classmethod
     def save_new_events_db(cls,events):
-        total_event_list =list(Availabledata.objects.values_list('event_id',flat=True))
-        users_in_db =list(Userdata.objects.all())
+        total_event_list =list(AvailableData.objects.values_list('event_id',flat=True))
+        users_in_db =list(UserData.objects.all())
         user_email_list={}
         new_records=[]
 
@@ -137,8 +137,8 @@ class Availabledata(models.Model):
         return self.user.personal_email
 
 
-class Assignementdata(models.Model):
-    user=models.ForeignKey(Userdata)
+class AssignementData(models.Model):
+    user=models.ForeignKey(UserData)
     assigned_start_time =models.DateTimeField()
     assigned_end_time =models.DateTimeField()
     event_id = models.CharField(max_length=100,blank=True)
@@ -146,21 +146,21 @@ class Assignementdata(models.Model):
     class Meta:
         verbose_name_plural = "assignmentData"
 
-    def save_calendar_event(self):
+    def save_appointment(self):
 
-        event=self.insert_api_call()
+        event=self.get_appointment_event()
         self.event_id=event['id']
 
         self.save(test_flag=True)
 
-    def insert_api_call(self):
-        
+    def get_appointment_event(self):
+
         email=self.user.personal_email
         start_time=self.assigned_start_time.isoformat()
         end_time=self.assigned_end_time.isoformat()
 
         scopes = ['https://www.googleapis.com/auth/calendar']
-        credentials = Credential.get_credentials(email)
+        credentials = Credential.objects.get(user_email=email).get_credentials()
         service = build("calendar", "v3", credentials=credentials)
         event = {
             'summary': 'Meeting Sceduled',
@@ -186,16 +186,17 @@ class Assignementdata(models.Model):
         valid_count=0
         if self.assigned_end_time > self.assigned_start_time:
 
-            available_record= Availabledata.objects.filter(user__userID=self.user.userID)
-            count =available_record.count() #get total records for a particular isa
+            available_record= AvailableData.objects.filter(user__userID=self.user.userID)
+            count = available_record.count() #get total records for a particular isa
             
-            for i in range(count):       #check if isa's available slot fits for asignement 
+            for i in range(count): #check if isa's available slot fits for asignement 
 
                 slot_available_start_time = available_record[i].available_start_time
                 slot_available_end_time = available_record[i].available_end_time
                 
                 if self.assigned_start_time >= slot_available_start_time and self.assigned_end_time < slot_available_end_time:
                     valid_count =valid_count+1
+
             return valid_count >0
 
     def clean(self):
@@ -210,9 +211,9 @@ class Assignementdata(models.Model):
         if user_available:
             if 'test_flag' in kwargs:
                 del kwargs['test_flag']
-                super(Assignementdata,self).save(*args,**kwargs)
+                super(AssignementData,self).save(*args,**kwargs)
             else:
-                super(Assignementdata,self).save(*args,**kwargs)
+                super(AssignementData,self).save(*args,**kwargs)
                 transaction.on_commit(lambda:setappointment.delay(self.id))
         
 

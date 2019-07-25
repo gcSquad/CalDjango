@@ -3,7 +3,7 @@ from __future__ import print_function
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect,render
 from django.urls import reverse
-from .models import Availabledata,Userdata,Assignementdata,Credential
+from .models import AvailableData,UserData,AssignementData,Credential
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, login
@@ -14,9 +14,14 @@ from django.contrib import messages
 
 
 def capture_token(request):
-    state=request.GET["state"]
-    code=request.GET["code"]
-    #handle error
+    try:
+        state=request.GET["state"]
+        code=request.GET["code"]
+    except:
+        messages.error(request,'User is not authorized !!')
+        return HttpResponseRedirect(reverse('admin:capi_availabledata_changelist'))
+
+    
     Credential.save_captured_token(state=state,code=code,email=request.user.email)
     return HttpResponseRedirect(reverse('admin:capi_availabledata_changelist'))
 
@@ -31,20 +36,20 @@ def import_data(request):
         return redirect(auth_url_for_access_token)
 
     events = user_credentials.import_fresh_available_data()
-    Availabledata.save_new_events_db(events)
+    AvailableData.save_new_events_db(events)
     return HttpResponseRedirect(reverse('admin:capi_availabledata_changelist'))
 
 
 class Get_user_List(APIView):
     def get(self, request):
-        users = Userdata.objects.all()
+        users = UserData.objects.all()
         serialized = userSerializer(users, many=True)
         return Response(serialized.data)
 
                 
 class Get_assignment_List(APIView):
     def get(self,request):
-        assignment=Assignementdata.objects.all()
+        assignment=AssignementData.objects.all()
         serialized = assignedDataSerializer(assignment, many=True)
         return Response(serialized.data)
 

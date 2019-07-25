@@ -1,12 +1,12 @@
 from rest_framework import serializers
-from .models import Userdata,Assignementdata
+from .models import UserData,AssignementData
 
 class userSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Userdata
+        model = UserData
         fields = '__all__'
 
 class assignedDataSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Assignementdata
+        model = AssignementData
         fields = '__all__'

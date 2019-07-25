@@ -3,8 +3,8 @@ from celery import shared_task
 
 @shared_task 
 def setappointment(record_id):
-    from capi.models import Assignementdata
-    Assignementdata.objects.get(id=record_id).save_calendar_event()
+    from capi.models import AssignementData
+    AssignementData.objects.get(id=record_id).save_appointment()
 
    
 

@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from django.contrib import admin
-from capi.models import Userdata,Availabledata,Assignementdata,Credential
+from capi.models import UserData,AvailableData,AssignementData,Credential
 
 class UserdataAdmin(admin.ModelAdmin):
     list_display=('userID','Username','personal_email')
@@ -17,7 +17,7 @@ class AssignementAdmin(admin.ModelAdmin):
 class CredentialsAdmin(admin.ModelAdmin):
     list_display=('user_email','state','token','refresh_token','client_secret_file')   
 
-admin.site.register(Userdata,UserdataAdmin)
-admin.site.register(Availabledata,AvailabledataAdmin)
-admin.site.register(Assignementdata,AssignementAdmin)
+admin.site.register(UserData,UserdataAdmin)
+admin.site.register(AvailableData,AvailabledataAdmin)
+admin.site.register(AssignementData,AssignementAdmin)
 admin.site.register(Credential,CredentialsAdmin)

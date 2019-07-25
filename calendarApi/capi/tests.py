@@ -7,13 +7,13 @@ from faker import Faker
 import random  
 import unittest
 import factory
-from .models import Assignementdata,Availabledata,Userdata,Credential
+from .models import AssignementData,Availabledata,UserData,Credential
 from mock import Mock, patch
 
 
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = Userdata
+        model = UserData
     userID= random.randrange(0,100,2)
     personal_email= factory.Faker('email')
     Username = factory.Faker('name')
@@ -27,7 +27,7 @@ class AvailabledataFactory(factory.django.DjangoModelFactory):
 
 class AssignementFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = Assignementdata
+        model = AssignementData
     user=factory.SubFactory(UserFactory)
     assigned_start_time=timezone.now()
     assigned_end_time=timezone.now()+datetime.timedelta(hours=3)
@@ -47,10 +47,10 @@ class Assignementdata_test(TestCase):
         user=AvailabledataFactory().user
         time_start= timezone.now()
         time_end = timezone.now() + datetime.timedelta(hours=1)
-        check_availability = Assignementdata(user=user,assigned_start_time=time_start,assigned_end_time=time_end)
+        check_availability = AssignementData(user=user,assigned_start_time=time_start,assigned_end_time=time_end)
         self.assertIs(check_availability.check_user_availability(), True)
 
-    @patch('capi.models.Assignementdata.insert_api_call')
+    @patch('capi.models.AssignementData.insert_api_call')
     def test_save_calendar_event(self,mock_insert_api_call):
         new_task=AssignementFactory()
         mock_insert_api_call.return_value={"id":"vpadtdvcr0n9nreq95a293bkog"}
@@ -61,11 +61,11 @@ class Availabledata_test(TestCase):
 
     def test_return_user_by_email(self):
         
-        user=Userdata.objects.create(userID= 1,personal_email="gauarv.chaturvedi@squadrun.co",
+        user=UserData.objects.create(userID= 1,personal_email="gauarv.chaturvedi@squadrun.co",
         Username = "Gaurav")
-        userlist=Userdata.objects.all()
+        userlist=UserData.objects.all()
         email="gauarv.chaturvedi@squadrun.co"
-        user=Userdata.objects.get(personal_email="gauarv.chaturvedi@squadrun.co")
+        user=UserData.objects.get(personal_email="gauarv.chaturvedi@squadrun.co")
         self.assertIs((Availabledata.return_userby_email(email,userlist)).userID,user.userID)
 
     
@@ -79,7 +79,7 @@ class Availabledata_test(TestCase):
         )
         time_start= timezone.now()+ datetime.timedelta(hours=4)
         time_end = timezone.now() + datetime.timedelta(hours=5)
-        user=Userdata.objects.create(userID= 2,personal_email="gauarv.chaturvedi@squadrun.co",
+        user=UserData.objects.create(userID= 2,personal_email="gauarv.chaturvedi@squadrun.co",
             Username = "Gaurav")
         Availabledata.objects.create(user=user,available_start_time=time_start,available_end_time=time_end)
             
