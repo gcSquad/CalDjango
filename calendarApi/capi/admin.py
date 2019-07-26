@@ -5,7 +5,7 @@ from django.contrib import admin
 from capi.models import UserData,AvailableData,AssignementData,Credential
 
 class UserdataAdmin(admin.ModelAdmin):
-    list_display=('userID','Username','personal_email')
+    list_display=('user','Username','personal_email')
 class AvailabledataAdmin(admin.ModelAdmin):
     list_display=('user','available_start_time','available_end_time')
  #   actions = [refresh]

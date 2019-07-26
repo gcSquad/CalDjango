@@ -67,7 +67,7 @@ class Login(APIView):
             login(request, user)
             return HttpResponseRedirect("/capi/")
           else:
-              print ("wrong username/password")
+              messages.error(request,"wrong username/password")
               return Response(request,self.template_name)
 
 

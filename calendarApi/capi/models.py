@@ -91,7 +91,7 @@ class Credential(models.Model):
 
             
 class UserData(models.Model):
-    userID = models.AutoField(primary_key=True,db_column="userID")
+    user = models.AutoField(primary_key=True,db_column="userID")
     personal_email=  models.EmailField(max_length=70, unique= True)
     Username = models.CharField(max_length=120)
     
@@ -186,7 +186,7 @@ class AssignementData(models.Model):
         valid_count=0
         if self.assigned_end_time > self.assigned_start_time:
 
-            available_record= AvailableData.objects.filter(user__userID=self.user.userID)
+            available_record= AvailableData.objects.filter(user__user=self.user.user)
             count = available_record.count() #get total records for a particular isa
             
             for i in range(count): #check if isa's available slot fits for asignement 
