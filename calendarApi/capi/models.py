@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 from django.db import models
 from django.contrib.auth.models import User
-from tasks import setappointment
+from tasks import set_appointment
 import datetime   
 import pickle
 import os.path
@@ -147,13 +147,13 @@ class AssignementData(models.Model):
         verbose_name_plural = "assignmentData"
 
     def save_appointment(self):
-
-        event=self.get_appointment_event()
+        
+        event=self.create_appointment_event()
         self.event_id=event['id']
 
-        self.save(test_flag=True)
+        self.save(event_id_set=True)
 
-    def get_appointment_event(self):
+    def create_appointment_event(self):
 
         email=self.user.personal_email
         start_time=self.assigned_start_time.isoformat()
@@ -191,10 +191,10 @@ class AssignementData(models.Model):
             
             for i in range(count): #check if isa's available slot fits for asignement 
 
-                slot_available_start_time = available_record[i].available_start_time
-                slot_available_end_time = available_record[i].available_end_time
+                slot_start_time = available_record[i].available_start_time
+                slot_end_time = available_record[i].available_end_time
                 
-                if self.assigned_start_time >= slot_available_start_time and self.assigned_end_time < slot_available_end_time:
+                if self.assigned_start_time >= slot_start_time and self.assigned_end_time < slot_end_time:
                     valid_count =valid_count+1
 
             return valid_count >0
@@ -209,12 +209,12 @@ class AssignementData(models.Model):
 
         user_available = self.check_user_availability()
         if user_available:
-            if 'test_flag' in kwargs:
-                del kwargs['test_flag']
+            if 'event_id_set' in kwargs:
+                del kwargs['event_id_set']
                 super(AssignementData,self).save(*args,**kwargs)
             else:
                 super(AssignementData,self).save(*args,**kwargs)
-                transaction.on_commit(lambda:setappointment.delay(self.id))
+                transaction.on_commit(lambda:set_appointment.delay(self.id))
         
 
         
