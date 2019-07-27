@@ -68,13 +68,13 @@ class Login(APIView):
           user = authenticate(username=username, password=password)
           if user is not None:
             login(request, user)
-            return HttpResponseRedirect("/capi/")
+            return HttpResponseRedirect(reverse('home'))
           else:
               messages.error(request,"wrong username/password")
               return Response(request,self.template_name)
 
 
-def user_logout(request):
+def logout(request):
     return render(request,'logout.html')
 
 def home(request):

@@ -7,10 +7,10 @@ from django.views.generic.base import RedirectView
 from . import views
 urlpatterns = [
     url(r'^$', views.home, name='home'),
-    url(r'^capture_token$',views.capture_token,name='capture_token'),
-    url(r'^availabledata/',views.import_data, name='import_data'),
-    url(r'^userapi$', views.GetUserList.as_view(),name='userapi'),
-    url(r'^assignmentapi$', views.GetAssignmentList.as_view(),name='assignmentapi'),
+    url(r'^capture-token/$',views.capture_token,name='capture_token'),
+    url(r'^available-data/$',views.import_data, name='import_data'),
+    url(r'^user-list-api/$', views.GetUserList.as_view(),name='user_list_api'),
+    url(r'^assignment-api/$', views.GetAssignmentList.as_view(),name='assignment_api'),
     url(r'^login/$', views.Login.as_view(), name='login'),
-    url(r'^logout/$', views.user_logout, name='logout'),
+    url(r'^logout/$', views.logout, name='logout'),
 ]

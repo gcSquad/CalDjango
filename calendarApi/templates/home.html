@@ -8,7 +8,7 @@
       function apireq(){
         var user_id=""
         $.ajax({
-                 url : "http://127.0.0.1:8000/capi/userapi",
+                 url : "http://127.0.0.1:8000/capi/user_list_api",
                  dataType: "json",
                  success : function (data) {
                           for (var i=0;i<data.length;i++){
@@ -20,7 +20,7 @@
                         }
                      });
                     setTimeout($.ajax({
-                 url : "http://127.0.0.1:8000/capi/assignmentapi",
+                 url : "http://127.0.0.1:8000/capi/assignment_api",
                  dataType: "json",
                  success : function (data) {
                           var text=""

@@ -82,13 +82,13 @@ class Credential(models.Model):
 class UserData(models.Model):
     user = models.AutoField(primary_key=True,db_column="userID")
     personal_email=  models.EmailField(max_length=70, unique= True)
-    Username = models.CharField(max_length=120)
+    username = models.CharField(max_length=120)
     
     class Meta:
         verbose_name_plural = "users"
 
     def __unicode__(self):
-        return self.Username
+        return self.username
 
 class AvailableData(models.Model):
     user=models.ForeignKey(UserData)
@@ -173,9 +173,6 @@ class AssignementData(models.Model):
 
         self.update(assigned_start_time=self.assigned_start_time.isoformat(),assigned_end_time=self.assigned_end_time.isoformat())
         
-
-
-
 
     def create_appointment_event(self,email):
 
