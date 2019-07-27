@@ -8,7 +8,7 @@ from capi.models import UserData,AvailableData,AssignementData,Credential
 class UserDataAdmin(admin.ModelAdmin):
     list_display=('user','username','personal_email')
 
-class AvailabledataAdmin(admin.ModelAdmin):
+class AvailableDataAdmin(admin.ModelAdmin):
     list_display=('user','available_start_time','available_end_time')
     readonly_fields=('user','available_start_time','available_end_time','event_id',)
 
@@ -25,6 +25,6 @@ class CredentialsAdmin(admin.ModelAdmin):
     readonly_fields = ('state','token','refresh_token',)   
 
 admin.site.register(UserData,UserDataAdmin)
-admin.site.register(AvailableData,AvailabledataAdmin)
+admin.site.register(AvailableData,AvailableDataAdmin)
 admin.site.register(AssignementData,AssignementAdmin)
 admin.site.register(Credential,CredentialsAdmin)

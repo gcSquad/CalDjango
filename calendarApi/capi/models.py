@@ -117,9 +117,7 @@ class AvailableData(models.Model):
                                 )
 
                 new_available_data_objects.append(new_available_object)
-        cls.objects.bulk_create(new_available_data_objects)
-
-    
+        cls.objects.bulk_create(new_available_data_objects)   
 
     def __unicode__(self):
         return self.user.personal_email
@@ -133,7 +131,6 @@ class AssignementData(models.Model):
 
     class Meta:
         verbose_name_plural = "assignmentData"
-
 
     def save_appointment_to_calendar(self,logged_in_user_email):
         
@@ -169,39 +166,33 @@ class AssignementData(models.Model):
             }
         
         if self.event_id:
-
             updated_event = service.events().update(calendarId='primary', eventId=self.event_id, body=event).execute()
             updated = True
             return updated_event,updated
-
         else:
             event = service.events().insert(calendarId='primary', body=event).execute()
             updated = False
             return event,updated
-
-
-
-        
             
 
     def check_user_availability(self):
+
         valid_count=0
+
         if self.assigned_end_time > self.assigned_start_time:
 
             available_record= AvailableData.objects.filter(user__user=self.user.user)
-            count = available_record.count() #get total records for a particular isa
             
-            for i in range(count): #check if isa's available slot fits for asignement 
-
-                slot_start_time = available_record[i].available_start_time
-                slot_end_time = available_record[i].available_end_time
-                
+            for record in range(available_record.count()): #check if isa's available slot fits for asignement 
+                slot_start_time = available_record[record].available_start_time
+                slot_end_time = available_record[record].available_end_time
                 if self.assigned_start_time >= slot_start_time and self.assigned_end_time < slot_end_time:
                     valid_count =valid_count+1
 
             return valid_count >0
 
     def clean(self):
+        
         user_available = self.check_user_availability()
         if not user_available:
             raise ValidationError(('Selected User is not available for given time slot!!'))

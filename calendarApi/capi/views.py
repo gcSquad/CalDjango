@@ -9,7 +9,6 @@ from django.views.generic import TemplateView
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
-from .serializers import userSerializer,assignedDataSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.views.generic import ListView
@@ -67,11 +66,13 @@ class Login(TemplateView):
 def logout(request):
     return render(request,'logout.html')
 
-def home(request):
-    assignment_record=AssignementData.objects.filter(user=request.user.id)
+def render_home(request):
+    assignment_record= AssignementData.objects.filter(user=request.user.id)
     context={
                   "assignment_record":assignment_record   
             }
     return render(request,'home.html',context)
+
+
 
 
