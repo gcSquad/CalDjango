@@ -3,51 +3,21 @@
 
 {% block content %}
   <h2>Home</h2>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-  <script> 
-      function apireq(){
-        var user_id=""
-        $.ajax({
-                 url : "http://127.0.0.1:8000/capi/user_list_api",
-                 dataType: "json",
-                 success : function (data) {
-                          for (var i=0;i<data.length;i++){
-                            if(data[i].personal_email == "{{user.email}}")
-                            {
-                              user_id=data[i].user
-                            }
-                          }
-                        }
-                     });
-                    setTimeout($.ajax({
-                 url : "http://127.0.0.1:8000/capi/assignment_api",
-                 dataType: "json",
-                 success : function (data) {
-                          var text=""
-                          for (var i=0;i<data.length;i++){
-                            if(data[i].user== user_id)
-                            { 
-                              text+=data[i].assigned_start_time+"   "+data[i].assigned_end_time;
-                              $("#api_data").text(text)
-                            }
-                            }
-                            if($("#api_data").innerHTML=""){
-                              $("#api_data").text("You can have a rest day!! Chilllll!!!")
-                            }
-                        }
-                     }),3000)
-      }
-    </script>
   <body>
     <header>
       <h1>Welcome to CalendarApi.com</h1>
       {% if user.is_authenticated %}
         Hi {{ user.username }}!
+        <br/>
+        <h3>Your assignments</h3>
+        {% if assignment_record %}
+        {% for record in assignment_record %}
+        <p>{{ record.assigned_start_time }}</p>
+        {% endfor %}
+        {% else %}
+        <p>No assignments for you. Enjoy !!!</p>
+        {% endif %}
         <a href="{% url 'logout' %}">logout</a>
-        <div>
-          <button class="apireq" style="margin-top:10px;padding:5px" onclick="apireq()">Get Your Assignments </button> 
-       </div>
-       <div id="api_data"></div>
       {% else %}
         <a href="{% url 'login' %}">login</a>
       {% endif %}

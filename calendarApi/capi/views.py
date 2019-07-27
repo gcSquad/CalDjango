@@ -5,12 +5,14 @@ from django.shortcuts import redirect,render
 from django.urls import reverse
 from .models import AvailableData,UserData,AssignementData,Credential
 from rest_framework.views import APIView
+from django.views.generic import TemplateView
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from .serializers import userSerializer,assignedDataSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
+from django.views.generic import ListView
 from requests.exceptions import ConnectionError
 import json
 
@@ -43,41 +45,33 @@ def import_data(request):
     return HttpResponseRedirect(reverse('admin:capi_availabledata_changelist'))
 
 
-class GetUserList(APIView):
-    def get(self, request):
-        users = UserData.objects.all()
-        serialized = userSerializer(users, many=True)
-        return Response(serialized.data)
-
-                
-class GetAssignmentList(APIView):
-    def get(self,request):
-        assignment_objects=AssignementData.objects.all()
-        serialized = assignedDataSerializer(assignment_objects, many=True)
-        return Response(serialized.data)
-
-class Login(APIView):
+class Login(TemplateView):
     template_name = 'login.html'
 
     def get(self, request, *args, **kwargs):
         return render(request, self.template_name)
 
     def post(self,request,format=None):
-          username = request.POST['username']
-          password = request.POST['password']
-          user = authenticate(username=username, password=password)
-          if user is not None:
+
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(username=username, password=password)
+        if user is not None:
             login(request, user)
             return HttpResponseRedirect(reverse('home'))
-          else:
-              messages.error(request,"wrong username/password")
-              return Response(request,self.template_name)
+        else:
+            messages.error(request,"wrong username/password")
+            return Response(request,self.template_name)
 
 
 def logout(request):
     return render(request,'logout.html')
 
 def home(request):
-    return render(request,'home.html')
+    assignment_record=AssignementData.objects.filter(user=request.user.id)
+    context={
+                  "assignment_record":assignment_record   
+            }
+    return render(request,'home.html',context)
 
 

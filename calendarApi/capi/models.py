@@ -134,20 +134,19 @@ class AssignementData(models.Model):
     class Meta:
         verbose_name_plural = "assignmentData"
 
-    def check_existing_events(self,event_id):
-        try:
-            return AssignementData.objects.get(event_id=event_id)
-        except AssignementData.DoesNotExist:
-            return False
-
 
     def save_appointment_to_calendar(self,logged_in_user_email):
         
-        event = self.create_appointment_event(logged_in_user_email)
-        self.event_id=event['id']
-        self.save(update_fields=["event_id"])
+        event,updated = self.create_appointment_event(logged_in_user_email)
 
-    def update_appointment_in_calendar(self,logged_in_user_email):
+        if updated:
+            self.save(update_fields=["assigned_start_time","assigned_end_time"])
+        else:
+            self.event_id=event['id']
+            self.save(update_fields=["event_id"])
+
+
+    def create_appointment_event(self,logged_in_user_email):
 
         player_email=self.user.personal_email
         start_time = self.assigned_start_time.isoformat()
@@ -168,37 +167,21 @@ class AssignementData(models.Model):
                 {'email': player_email},
             ],
             }
-
-        updated_event = service.events().update(calendarId='primary', eventId=event['id'], body=event).execute()
-
-        self.update(assigned_start_time=self.assigned_start_time.isoformat(),assigned_end_time=self.assigned_end_time.isoformat())
         
+        if self.event_id:
 
-    def create_appointment_event(self,email):
+            updated_event = service.events().update(calendarId='primary', eventId=self.event_id, body=event).execute()
+            updated = True
+            return updated_event,updated
 
-        logged_in_user_email = email
-        player_email=self.user.personal_email
-        start_time = self.assigned_start_time.isoformat()
-        end_time = self.assigned_end_time.isoformat()
+        else:
+            event = service.events().insert(calendarId='primary', body=event).execute()
+            updated = False
+            return event,updated
 
-        credentials = Credential.objects.get(user_email=logged_in_user_email).get_credentials()
-        service = build("calendar", "v3", credentials=credentials)
-        event = {
-            'summary': 'Meeting Sceduled',
-            'description': 'Time for work.',
-            'start': {
-                'dateTime': start_time, 
-            },
-            'end': {
-                'dateTime': end_time,   
-            },
-            'attendees': [
-                {'email': player_email},
-            ],
-            }
 
-        event = service.events().insert(calendarId='primary', body=event).execute()
-        return event
+
+        
             
 
     def check_user_availability(self):
