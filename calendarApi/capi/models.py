@@ -65,6 +65,7 @@ class Credential(models.Model):
         events_result = service.events().list(calendarId='primary',singleEvents=True,timeMin=time_min,timeMax=time_max,orderBy='startTime').execute()
 
         events = events_result.get('items', [])
+        print(events)
         return events
 
     @classmethod
@@ -76,7 +77,9 @@ class Credential(models.Model):
         flow.redirect_uri= settings.AUTH_REDIRECT_URI+reverse('capture_token')
         recieved_token=flow.fetch_token(code=code)
 
-        client_data.update(token=recieved_token["access_token"],refresh_token=recieved_token["refresh_token"])
+        client_data.token=recieved_token["access_token"]
+        client_data.refresh_token=recieved_token["refresh_token"]
+        client_data.save(update_fields=["token","refresh_token"])
 
             
 class UserData(models.Model):
@@ -192,7 +195,7 @@ class AssignementData(models.Model):
             return valid_count >0
 
     def clean(self):
-        
+
         user_available = self.check_user_availability()
         if not user_available:
             raise ValidationError(('Selected User is not available for given time slot!!'))
