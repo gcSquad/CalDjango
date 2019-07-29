@@ -65,7 +65,6 @@ class Credential(models.Model):
         events_result = service.events().list(calendarId='primary',singleEvents=True,timeMin=time_min,timeMax=time_max,orderBy='startTime').execute()
 
         events = events_result.get('items', [])
-        print(events)
         return events
 
     @classmethod
@@ -101,6 +100,10 @@ class AvailableData(models.Model):
 
     class Meta:
         verbose_name_plural = "availableData"
+
+    def __unicode__(self):
+        return self.user.personal_email
+
                 
     @classmethod
     def save_new_events_in_db(cls,events):
@@ -122,11 +125,10 @@ class AvailableData(models.Model):
                 new_available_data_objects.append(new_available_object)
         cls.objects.bulk_create(new_available_data_objects)   
 
-    def __unicode__(self):
-        return self.user.personal_email
-
+    
 
 class AssignementData(models.Model):
+    
     user=models.ForeignKey(UserData)
     assigned_start_time =models.DateTimeField()
     assigned_end_time =models.DateTimeField()
@@ -135,13 +137,16 @@ class AssignementData(models.Model):
     class Meta:
         verbose_name_plural = "assignmentData"
 
+    def clean(self):
+        user_available = self.check_user_availability()
+        if not user_available:
+            raise ValidationError(('Selected User is not available for given time slot!!'))
+
     def save_appointment_to_calendar(self,logged_in_user_email):
         
         event,updated = self.create_appointment_event(logged_in_user_email)
 
-        if updated:
-            self.save(update_fields=["assigned_start_time","assigned_end_time"])
-        else:
+        if not updated:
             self.event_id=event['id']
             self.save(update_fields=["event_id"])
 
@@ -155,7 +160,7 @@ class AssignementData(models.Model):
         credentials = Credential.objects.get(user_email=logged_in_user_email).get_credentials()
         service = build("calendar", "v3", credentials=credentials)
         event = {
-            'summary': 'Meeting Sceduled',
+            'summary': 'Meeting Scheduled',
             'description': 'Time for work.',
             'start': {
                 'dateTime': start_time, 
@@ -179,26 +184,15 @@ class AssignementData(models.Model):
             
 
     def check_user_availability(self):
-
-        valid_count=0
+        #still working on it
 
         if self.assigned_end_time > self.assigned_start_time:
 
-            available_record= AvailableData.objects.filter(user__user=self.user.user)
-            
-            for record in range(available_record.count()): #check if isa's available slot fits for asignement 
-                slot_start_time = available_record[record].available_start_time
-                slot_end_time = available_record[record].available_end_time
-                if self.assigned_start_time >= slot_start_time and self.assigned_end_time < slot_end_time:
-                    valid_count =valid_count+1
+            available_records = AvailableData.objects.filter(user__user=self.user.user,available_start_time__lte = self.assigned_start_time,available_end_time__gte=self.assigned_end_time)
 
-            return valid_count >0
+            return available_records.count() > 0
 
-    def clean(self):
 
-        user_available = self.check_user_availability()
-        if not user_available:
-            raise ValidationError(('Selected User is not available for given time slot!!'))
 
         
 

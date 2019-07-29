@@ -10,14 +10,14 @@
         Hi {{ user.username }}!
         <br/>
         <h3>Your assignments</h3>
-        {% if assignment_record %}
-        {% for record in assignment_record %}
+        {% if assignment_records %}
+        {% for record in assignment_records %}
         <p>{{ record.assigned_start_time }}</p>
         {% endfor %}
         {% else %}
         <p>No assignments for you. Enjoy !!!</p>
         {% endif %}
-        <a href="{% url 'logout' %}">logout</a>
+        <a href="{% url 'logout_user' %}">logout</a>
       {% else %}
         <a href="{% url 'login' %}">login</a>
       {% endif %}

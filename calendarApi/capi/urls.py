@@ -10,5 +10,5 @@ urlpatterns = [
     url(r'^capture-token/$',views.capture_token,name='capture_token'),
     url(r'^available-data/$',views.import_data, name='import_data'),
     url(r'^login/$', views.Login.as_view(), name='login'),
-    url(r'^logout/$', views.logout, name='logout'),
+    url(r'^logout/$', views.logout_user, name='logout_user'),
 ]

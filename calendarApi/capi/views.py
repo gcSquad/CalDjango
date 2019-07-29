@@ -7,7 +7,7 @@ from .models import AvailableData,UserData,AssignementData,Credential
 from rest_framework.views import APIView
 from django.views.generic import TemplateView
 from rest_framework.response import Response
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login,logout
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
@@ -48,6 +48,8 @@ class Login(TemplateView):
     template_name = 'login.html'
 
     def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return HttpResponseRedirect(reverse('home'))
         return render(request, self.template_name)
 
     def post(self,request,format=None):
@@ -63,13 +65,14 @@ class Login(TemplateView):
             return Response(request,self.template_name)
 
 
-def logout(request):
+def logout_user(request):
+    logout(request)
     return render(request,'logout.html')
 
 def render_home(request):
-    assignment_record= AssignementData.objects.filter(user=request.user.id)
+    assignment_records= AssignementData.objects.filter(user=request.user.id)
     context={
-                  "assignment_record":assignment_record   
+                  "assignment_records":assignment_records  
             }
     return render(request,'home.html',context)
 
