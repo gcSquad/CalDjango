@@ -205,7 +205,7 @@ class AssignementData(models.Model):
         return result
 
 
-    @classmethod
+    @classmethod #returns closest end time less than assignment-start-time from where check for availibility will start
     def get_initial_closest_time(cls,start_available_time,start_time_vs_end_time_for_user_wrt_start_time):
         for start_time,end_time in start_time_vs_end_time_for_user_wrt_start_time.items():
             current_end_time=end_time
@@ -214,16 +214,16 @@ class AssignementData(models.Model):
         return current_end_time
 
     @classmethod
-    def check_availibilty_wrt_all_available_data(cls,start_time,assigned_end_time,start_time_vs_end_time_for_user):
-        if start_time>= assigned_end_time:#if end-time for particular slot is more than                                               required assignmnet time-Base condition
+    def check_availibilty_wrt_all_available_data(cls,available_end_time,assigned_end_time,start_time_vs_end_time_for_user):
+        if available_end_time>= assigned_end_time:#if end-time for particular slot is more than                                               required assignmnet time-Base condition
             return True
 
-        if start_time in start_time_vs_end_time_for_user: #this condition will ensure chaining of time-slots like 06:00-06:15,06:15-07:30 and so on
-            return AssignementData.check_availibilty_wrt_all_available_data(start_time=start_time_vs_end_time_for_user[start_time],assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
+        if available_end_time in start_time_vs_end_time_for_user: #this condition will ensure chaining of time-slots like 06:00-06:15,06:15-07:30 and so on
+            return AssignementData.check_availibilty_wrt_all_available_data(available_end_time=start_time_vs_end_time_for_user[start_time],assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
         else:#this will ensure checks for inclusive slots like 06:00-06:30,06:15-07:30
             for near_start,near_end in start_time_vs_end_time_for_user.items():
-                if near_start>start_time:
-                    return AssignementData.check_availibilty_wrt_all_available_data(start_time=near_end,assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
+                if near_start>available_end_time:
+                    return AssignementData.check_availibilty_wrt_all_available_data(available_end_time=near_end,assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
                 else:
                     return False
             return False
