@@ -187,19 +187,20 @@ class AssignementData(models.Model):
 
     def check_user_availability(self):
 
-        all_available_events_for_user = AvailableData.objects.filter(user__user=self.user.user).order_by('available_start_time') #get data for particular user
-        start_time_vs_end_time_for_user= OrderedDict(all_available_events_for_user.values_list('available_start_time','available_end_time')) #make key value pair for the data
+        all_available_events_for_user = AvailableData.objects.filter(user__user=self.user.user).order_by('available_start_time') #get availibilty data for particular user
+        start_time_vs_end_time_for_user= OrderedDict(all_available_events_for_user.values_list('available_start_time','available_end_time')) #make key value pair for the ^ data
 
-        available_records_wrt_start_time = all_available_events_for_user.filter(available_start_time__lte = self.assigned_start_time) #get required records matching start_time condition
+        available_records_wrt_start_time = all_available_events_for_user.filter(available_start_time__lte = self.assigned_start_time) #from above data ,get required available records matching assignment-start_time condition 
 
-        start_time_vs_end_time_for_user_wrt_start_time = OrderedDict(available_records_wrt_start_time.values_list('available_start_time','available_end_time')) #key-value for ^
-
-        initial_end_time=AssignementData.get_initial_closest_time(self.assigned_start_time,start_time_vs_end_time_for_user_wrt_start_time)
+        #key-value for ^ data
+        start_time_vs_end_time_for_user_wrt_start_time = OrderedDict(available_records_wrt_start_time.values_list('available_start_time','available_end_time')) 
 
         #get closest end time less than assignment-start-time from where check for availibility will start
+        initial_end_time=AssignementData.get_initial_closest_time(self.assigned_start_time,start_time_vs_end_time_for_user_wrt_start_time)
 
-        result= AssignementData.check_availibilty_wrt_all_available_data(initial_end_time,self.assigned_end_time,start_time_vs_end_time_for_user)
         #check availibilty wrt all the available records of user not only the ones satisafying available start time condition 
+        result= AssignementData.check_availibilty_wrt_all_available_data(initial_end_time,self.assigned_end_time,start_time_vs_end_time_for_user)
+        
 
         return result
 
