@@ -201,15 +201,14 @@ class AssignementData(models.Model):
         #check availibilty wrt all the available records of user not only the ones satisafying available start time condition 
         result= AssignementData.check_availibilty_wrt_all_available_data(initial_end_time,self.assigned_end_time,start_time_vs_end_time_for_user)
         
-
         return result
 
 
     @classmethod #returns closest end time less than assignment-start-time from where check for availibility will start
-    def get_initial_closest_time(cls,start_available_time,start_time_vs_end_time_for_user_wrt_start_time):
+    def get_initial_closest_time(cls,start_assigned_time,start_time_vs_end_time_for_user_wrt_start_time):
+        current_end_time=start_time_vs_end_time_for_user_wrt_start_time.values()[0]
         for start_time,end_time in start_time_vs_end_time_for_user_wrt_start_time.items():
-            current_end_time=end_time
-            if start_time<=start_available_time: 
+            if start_time<=start_assigned_time: 
                 current_end_time=end_time
         return current_end_time
 
@@ -219,7 +218,7 @@ class AssignementData(models.Model):
             return True
 
         if available_end_time in start_time_vs_end_time_for_user: #this condition will ensure chaining of time-slots like 06:00-06:15,06:15-07:30 and so on
-            return AssignementData.check_availibilty_wrt_all_available_data(available_end_time=start_time_vs_end_time_for_user[start_time],assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
+            return AssignementData.check_availibilty_wrt_all_available_data(available_end_time=start_time_vs_end_time_for_user[available_end_time],assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
         else:#this will ensure checks for inclusive slots like 06:00-06:30,06:15-07:30
             for near_start,near_end in start_time_vs_end_time_for_user.items():
                 if near_start>available_end_time:
