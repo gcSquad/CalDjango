@@ -185,8 +185,7 @@ class AssignementData(models.Model):
         if self.assigned_end_time > self.assigned_start_time:
 
             all_available_events_for_day =AvailableData.objects.filter(user__user=self.user.user,available_start_time__date=self.assigned_end_time.date())
-
-            start_time_vs_end_time_for_day=dict(all_available_events_for_day.values_list('available_start_time','available_end_time'))
+            start_time_vs_end_time_for_day= dict(all_available_events_for_day.values_list('available_start_time','available_end_time'))
 
             available_records_wrt_start_time = all_available_events_for_day.filter(available_start_time__lte = self.assigned_start_time)
 
