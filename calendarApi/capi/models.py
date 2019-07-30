@@ -187,38 +187,42 @@ class AssignementData(models.Model):
 
     def check_user_availability(self):
 
-        all_available_events_for_day = AvailableData.objects.filter(user__user=self.user.user,available_start_time__date=self.assigned_end_time.date()).order_by('available_start_time')
-        start_time_vs_end_time_for_day= OrderedDict(all_available_events_for_day.values_list('available_start_time','available_end_time'))
+        all_available_events_for_user = AvailableData.objects.filter(user__user=self.user.user).order_by('available_start_time') #get data for particular user
+        start_time_vs_end_time_for_user= OrderedDict(all_available_events_for_user.values_list('available_start_time','available_end_time')) #make key value pair for the data
 
-        available_records_wrt_start_time = all_available_events_for_day.filter(available_start_time__lte = self.assigned_start_time)
-        start_time_vs_end_time_for_day_wrt_start_time = OrderedDict(available_records_wrt_start_time.values_list('available_start_time','available_end_time'))
+        available_records_wrt_start_time = all_available_events_for_user.filter(available_start_time__lte = self.assigned_start_time) #get required records matching start_time condition
 
-        initial_end_time=AssignementData.get_initial_closest_time(self.assigned_start_time,start_time_vs_end_time_for_day_wrt_start_time)
+        start_time_vs_end_time_for_user_wrt_start_time = OrderedDict(available_records_wrt_start_time.values_list('available_start_time','available_end_time')) #key-value for ^
 
-        result= AssignementData.return_final_result(initial_end_time,self.assigned_end_time,start_time_vs_end_time_for_day)
+        initial_end_time=AssignementData.get_initial_closest_time(self.assigned_start_time,start_time_vs_end_time_for_user_wrt_start_time)
+
+        #get closest end time less than assignment-start-time from where check for availibility will start
+
+        result= AssignementData.check_availibilty_wrt_all_available_data(initial_end_time,self.assigned_end_time,start_time_vs_end_time_for_user)
+        #check availibilty wrt all the available records of user not only the ones satisafying available start time condition 
 
         return result
 
 
     @classmethod
-    def get_initial_closest_time(cls,start_available_time,time_dict):
-        for start_time,end_time in time_dict.items():
+    def get_initial_closest_time(cls,start_available_time,start_time_vs_end_time_for_user_wrt_start_time):
+        for start_time,end_time in start_time_vs_end_time_for_user_wrt_start_time.items():
             current_end_time=end_time
-            if start_time<=start_available_time:
+            if start_time<=start_available_time: 
                 current_end_time=end_time
         return current_end_time
 
     @classmethod
-    def return_final_result(cls,start_time,assigned_end_time,time_dict):
-        if start_time>= assigned_end_time:
+    def check_availibilty_wrt_all_available_data(cls,start_time,assigned_end_time,start_time_vs_end_time_for_user):
+        if start_time>= assigned_end_time:#if end-time for particular slot is more than                                               required assignmnet time-Base condition
             return True
 
-        if start_time in time_dict:
-            return AssignementData.return_final_result(start_time=time_dict[start_time],assigned_end_time=assigned_end_time,time_dict=time_dict)
-        else:
-            for near_start,near_end in time_dict.items():
+        if start_time in start_time_vs_end_time_for_user: #this condition will ensure chaining of time-slots like 06:00-06:15,06:15-07:30 and so on
+            return AssignementData.check_availibilty_wrt_all_available_data(start_time=start_time_vs_end_time_for_user[start_time],assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
+        else:#this will ensure checks for inclusive slots like 06:00-06:30,06:15-07:30
+            for near_start,near_end in start_time_vs_end_time_for_user.items():
                 if near_start>start_time:
-                    return AssignementData.return_final_result(start_time=near_end,assigned_end_time=assigned_end_time,time_dict=time_dict)
+                    return AssignementData.check_availibilty_wrt_all_available_data(start_time=near_end,assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
                 else:
                     return False
             return False
@@ -239,9 +243,9 @@ class AssignementData(models.Model):
 
     #     available_records_wrt_start_time = all_available_events_for_day.filter(available_start_time__lte = self.assigned_start_time)
 
-    #     start_time_vs_end_time_for_day_wrt_start_time = OrderedDict(available_records_wrt_start_time.values_list('available_start_time','available_end_time'))
+    #     start_time_vs_end_time_for_user_wrt_start_time = OrderedDict(available_records_wrt_start_time.values_list('available_start_time','available_end_time'))
 
-    #     for end_time in start_time_vs_end_time_for_day_wrt_start_time.values():
+    #     for end_time in start_time_vs_end_time_for_user_wrt_start_time.values():
     #         if self.assigned_end_time <= end_time:
     #             return True
     #         else:
