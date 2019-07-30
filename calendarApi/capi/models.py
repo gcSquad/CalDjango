@@ -144,9 +144,9 @@ class AssignementData(models.Model):
 
     def save_appointment_to_calendar(self,logged_in_user_email):
         
-        event,updated = self.create_appointment_event(logged_in_user_email)
+        event = self.create_appointment_event(logged_in_user_email)
 
-        if not updated:
+        if not self.event_id:
             self.event_id=event['id']
             self.save(update_fields=["event_id"])
 
@@ -175,22 +175,30 @@ class AssignementData(models.Model):
         
         if self.event_id:
             updated_event = service.events().update(calendarId='primary', eventId=self.event_id, body=event).execute()
-            updated = True
-            return updated_event,updated
+            return updated_event
         else:
             event = service.events().insert(calendarId='primary', body=event).execute()
-            updated = False
-            return event,updated
+            return event
             
 
     def check_user_availability(self):
-        #still working on it
-
         if self.assigned_end_time > self.assigned_start_time:
 
-            available_records = AvailableData.objects.filter(user__user=self.user.user,available_start_time__lte = self.assigned_start_time,available_end_time__gte=self.assigned_end_time)
+            all_available_events_for_day =AvailableData.objects.filter(user__user=self.user.user,available_start_time__date=self.assigned_end_time.date())
 
-            return available_records.count() > 0
+            start_time_vs_end_time_for_day=dict(all_available_events_for_day.values_list('available_start_time','available_end_time'))
+
+            available_records_wrt_start_time = all_available_events_for_day.filter(available_start_time__lte = self.assigned_start_time)
+
+            start_time_vs_end_time_for_day_wrt_start_time =dict(available_records_wrt_start_time.values_list('available_start_time','available_end_time'))
+            
+            for end_time in start_time_vs_end_time_for_day_wrt_start_time.values():
+                if self.assigned_end_time <= end_time:
+                    return True
+                else:
+                    for start,end in start_time_vs_end_time_for_day.items():
+                        if end_time == start and self.assigned_end_time <= end:
+                            return True
 
 
 
