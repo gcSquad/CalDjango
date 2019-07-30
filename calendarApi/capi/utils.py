@@ -10,3 +10,4 @@ def return_dates_in_isoformat(days_delta,operator):
 
         date_in_required_format = required_datetime.replace(microsecond=0).isoformat()
         return date_in_required_format 
+

@@ -10,6 +10,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow,Flow
 from django.contrib.postgres.fields import JSONField
 from django.core.files import File
 from django.urls import reverse
+from collections import OrderedDict 
 import json
 from django.core.exceptions import ValidationError
 from google.oauth2.credentials import Credentials
@@ -138,6 +139,9 @@ class AssignementData(models.Model):
         verbose_name_plural = "assignmentData"
 
     def clean(self):
+        if self.assigned_end_time < self.assigned_start_time:
+            raise ValidationError(("End time Can't be less than start time for assignement!!"))
+
         user_available = self.check_user_availability()
         if not user_available:
             raise ValidationError(('Selected User is not available for given time slot!!'))
@@ -179,25 +183,78 @@ class AssignementData(models.Model):
         else:
             event = service.events().insert(calendarId='primary', body=event).execute()
             return event
-            
+
 
     def check_user_availability(self):
-        if self.assigned_end_time > self.assigned_start_time:
 
-            all_available_events_for_day =AvailableData.objects.filter(user__user=self.user.user,available_start_time__date=self.assigned_end_time.date())
-            start_time_vs_end_time_for_day= dict(all_available_events_for_day.values_list('available_start_time','available_end_time'))
+        all_available_events_for_day = AvailableData.objects.filter(user__user=self.user.user,available_start_time__date=self.assigned_end_time.date()).order_by('available_start_time')
+        start_time_vs_end_time_for_day= OrderedDict(all_available_events_for_day.values_list('available_start_time','available_end_time'))
 
-            available_records_wrt_start_time = all_available_events_for_day.filter(available_start_time__lte = self.assigned_start_time)
+        available_records_wrt_start_time = all_available_events_for_day.filter(available_start_time__lte = self.assigned_start_time)
+        start_time_vs_end_time_for_day_wrt_start_time = OrderedDict(available_records_wrt_start_time.values_list('available_start_time','available_end_time'))
 
-            start_time_vs_end_time_for_day_wrt_start_time =dict(available_records_wrt_start_time.values_list('available_start_time','available_end_time'))
-            
-            for end_time in start_time_vs_end_time_for_day_wrt_start_time.values():
-                if self.assigned_end_time <= end_time:
-                    return True
+        initial_end_time=AssignementData.get_initial_closest_time(self.assigned_start_time,start_time_vs_end_time_for_day_wrt_start_time)
+
+        result= AssignementData.return_final_result(initial_end_time,self.assigned_end_time,start_time_vs_end_time_for_day)
+
+        return result
+
+
+    @classmethod
+    def get_initial_closest_time(cls,start_available_time,time_dict):
+        for start_time,end_time in time_dict.items():
+            current_end_time=end_time
+            if start_time<=start_available_time:
+                current_end_time=end_time
+        return current_end_time
+
+    @classmethod
+    def return_final_result(cls,start_time,assigned_end_time,time_dict):
+        if start_time>= assigned_end_time:
+            return True
+
+        if start_time in time_dict:
+            return AssignementData.return_final_result(start_time=time_dict[start_time],assigned_end_time=assigned_end_time,time_dict=time_dict)
+        else:
+            for near_start,near_end in time_dict.items():
+                if near_start>start_time:
+                    return AssignementData.return_final_result(start_time=near_end,assigned_end_time=assigned_end_time,time_dict=time_dict)
                 else:
-                    for start,end in start_time_vs_end_time_for_day.items():
-                        if end_time == start and self.assigned_end_time <= end:
-                            return True
+                    return False
+            return False
+            
+
+
+
+
+
+
+#just for my reference
+
+    # def check_user_availability(self):
+
+    #     all_available_events_for_day = AvailableData.objects.filter(user__user=self.user.user,available_start_time__date=self.assigned_end_time.date())
+
+    #     start_time_vs_end_time_for_day= OrderedDict(all_available_events_for_day.values_list('available_start_time','available_end_time'))
+
+    #     available_records_wrt_start_time = all_available_events_for_day.filter(available_start_time__lte = self.assigned_start_time)
+
+    #     start_time_vs_end_time_for_day_wrt_start_time = OrderedDict(available_records_wrt_start_time.values_list('available_start_time','available_end_time'))
+
+    #     for end_time in start_time_vs_end_time_for_day_wrt_start_time.values():
+    #         if self.assigned_end_time <= end_time:
+    #             return True
+    #         else:
+    #             for start,end in start_time_vs_end_time_for_day.items():
+    #                 if end_time >= start and self.assigned_end_time <= end:
+    #                     return True
+        
+
+
+
+
+
+
 
 
 
