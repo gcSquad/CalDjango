@@ -189,21 +189,20 @@ class AssignementData(models.Model):
         all_available_events_for_user = AvailableData.objects.filter(user__user=self.user.user)
 
         nearest_available_slot_wrt_start_time=all_available_events_for_user.order_by('-available_start_time').filter(available_start_time__lte = self.assigned_start_time)[:1]
-        start_vs_end_wrt_start=OrderedDict(nearest_available_slot_wrt_start_time.values_list('available_start_time','available_end_time'))
+        closest_start_slot= nearest_available_slot_wrt_start_time.values_list('available_start_time','available_end_time')[0]
+        start_time_slot=closest_start_slot[0]
+        initial_end_time=closest_start_slot[1]
+
 
         
         if nearest_available_slot_wrt_start_time.count()>0:
             nearest_available_slot_wrt_end_time=all_available_events_for_user.order_by('available_end_time').filter(available_end_time__gte = self.assigned_end_time)[:1]
             if nearest_available_slot_wrt_end_time.count()>0:
-                start_vs_end_wrt_end=OrderedDict(nearest_available_slot_wrt_end_time.values_list('available_start_time','available_end_time'))
+                end_time_slot=nearest_available_slot_wrt_end_time.values_list('available_end_time')[0][0]
             else:
                 return False    
         else:
             return False
-
-        start_time_slot=start_vs_end_wrt_start.keys()[0]
-        initial_end_time=start_vs_end_wrt_start.values()[0]
-        end_time_slot=start_vs_end_wrt_end.values()[0]
 
         records_between_assignment_slots=all_available_events_for_user.order_by('available_start_time').filter(available_start_time__gte=start_time_slot,available_end_time__lte=end_time_slot)
         start_vs_end_wrt_slot=OrderedDict(records_between_assignment_slots.values_list('available_start_time','available_end_time'))
