@@ -214,8 +214,8 @@ class AssignementData(models.Model):
 
     @classmethod
     def check_availibilty_wrt_all_available_data(cls,available_end_time,assigned_end_time,start_time_vs_end_time_for_user):
-        if available_end_time>= assigned_end_time:#if end-time for particular slot is more than                                               required assignmnet time-Base condition
-            return True
+        if available_end_time>= assigned_end_time:#if end-time for particular slot is more than                                               required assignmnet time-Base condition return True
+            return True 
 
         if available_end_time in start_time_vs_end_time_for_user: #this condition will ensure chaining of time-slots like 06:00-06:15,06:15-07:30 and so on
             return AssignementData.check_availibilty_wrt_all_available_data(available_end_time=start_time_vs_end_time_for_user[available_end_time],assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
@@ -226,30 +226,6 @@ class AssignementData(models.Model):
             return False
             
 
-
-
-
-
-
-#just for my reference
-
-    # def check_user_availability(self):
-
-    #     all_available_events_for_day = AvailableData.objects.filter(user__user=self.user.user,available_start_time__date=self.assigned_end_time.date())
-
-    #     start_time_vs_end_time_for_day= OrderedDict(all_available_events_for_day.values_list('available_start_time','available_end_time'))
-
-    #     available_records_wrt_start_time = all_available_events_for_day.filter(available_start_time__lte = self.assigned_start_time)
-
-    #     start_time_vs_end_time_for_user_wrt_start_time = OrderedDict(available_records_wrt_start_time.values_list('available_start_time','available_end_time'))
-
-    #     for end_time in start_time_vs_end_time_for_user_wrt_start_time.values():
-    #         if self.assigned_end_time <= end_time:
-    #             return True
-    #         else:
-    #             for start,end in start_time_vs_end_time_for_day.items():
-    #                 if end_time >= start and self.assigned_end_time <= end:
-    #                     return True
         
 
 
