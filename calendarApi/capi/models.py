@@ -192,8 +192,6 @@ class AssignementData(models.Model):
         closest_start_slot= nearest_available_slot_wrt_start_time.values_list('available_start_time','available_end_time')[0]
         start_time_slot=closest_start_slot[0]
         initial_end_time=closest_start_slot[1]
-
-
         
         if nearest_available_slot_wrt_start_time.count()>0:
             nearest_available_slot_wrt_end_time=all_available_events_for_user.order_by('available_end_time').filter(available_end_time__gte = self.assigned_end_time)[:1]
