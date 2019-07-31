@@ -214,16 +214,16 @@ class AssignementData(models.Model):
         return result
 
     @classmethod
-    def check_availibilty_wrt_all_available_data(cls,available_end_time,assigned_end_time,start_time_vs_end_time_for_user):
-        if available_end_time>= assigned_end_time:#if end-time for particular slot is more than                                               required assignmnet time-Base condition return True
+    def check_availibilty_wrt_all_available_data(cls,closest_start_slot_end_time,assigned_end_time,start_time_vs_end_time_for_user):
+        if closest_start_slot_end_time >= assigned_end_time:
             return True 
 
-        if available_end_time in start_time_vs_end_time_for_user: #this condition will ensure chaining of time-slots like 06:00-06:15,06:15-07:30 and so on
-            return AssignementData.check_availibilty_wrt_all_available_data(available_end_time=start_time_vs_end_time_for_user[available_end_time],assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
+        if closest_start_slot_end_time in start_time_vs_end_time_for_user: #this condition will ensure chaining of time-slots like 06:00-06:15,06:15-07:30 and so on
+            return AssignementData.check_availibilty_wrt_all_available_data(closest_start_slot_end_time=start_time_vs_end_time_for_user[closest_start_slot_end_time],assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
         else:#this will ensure checks for inclusive slots like 06:00-06:30,06:15-07:30
             for near_start,near_end in start_time_vs_end_time_for_user.items():
-                if near_start>available_end_time:
-                    return AssignementData.check_availibilty_wrt_all_available_data(available_end_time=near_end,assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
+                if near_start>closest_start_slot_end_time:
+                    return AssignementData.check_availibilty_wrt_all_available_data(closest_start_slot_end_time=near_end,assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
             return False
             
 
