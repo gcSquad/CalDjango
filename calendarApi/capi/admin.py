@@ -6,7 +6,7 @@ from django.contrib import admin
 from capi.models import UserData,AvailableData,AssignementData,Credential
 
 class UserDataAdmin(admin.ModelAdmin):
-    list_display=('user','username','personal_email')
+    list_display=('id','username','personal_email')
 
 class AvailableDataAdmin(admin.ModelAdmin):
     list_display=('user','available_start_time','available_end_time')
