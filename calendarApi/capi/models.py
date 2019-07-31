@@ -206,9 +206,8 @@ class AssignementData(models.Model):
         else:
             return False    
 
-        records_between_assignment_slots= all_available_events_for_user.order_by('available_start_time').filter(Q(available_start_time__gte=start_time_slot,available_end_time__lte=end_time_slot)|Q(available_start_time__lte=closest_start_slot_end_time)|Q(available_end_time__gte=closest_end_slot_start_time))
+        records_between_assignment_slots= all_available_events_for_user.order_by('available_start_time').filter(Q(available_start_time__gte=start_time_slot,available_end_time__lte=end_time_slot)|Q(available_start_time__lte=closest_start_slot_end_time,available_end_time__gte=closest_end_slot_start_time))
         start_vs_end_wrt_slot=OrderedDict(records_between_assignment_slots.values_list('available_start_time','available_end_time'))
-        print("dict",start_vs_end_wrt_slot)
 
         result = AssignementData.check_availibilty_wrt_all_available_data(closest_start_slot_end_time,self.assigned_end_time,start_vs_end_wrt_slot)
         
