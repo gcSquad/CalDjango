@@ -186,31 +186,31 @@ class AssignementData(models.Model):
 
 
     def check_user_availability(self):
+        all_available_events_for_user = AvailableData.objects.filter(user__user=self.user.user)
 
-        all_available_events_for_user = AvailableData.objects.filter(user__user=self.user.user).order_by('available_start_time') #get availibilty data for particular user
-        start_time_vs_end_time_for_user= OrderedDict(all_available_events_for_user.values_list('available_start_time','available_end_time')) #make key value pair for the ^ data
+        nearest_available_slot_wrt_start_time=all_available_events_for_user.order_by('-available_start_time').filter(available_start_time__lte = self.assigned_start_time)[:1]
+        start_vs_end_wrt_start=OrderedDict(nearest_available_slot_wrt_start_time.values_list('available_start_time','available_end_time'))
 
-        available_records_wrt_start_time = all_available_events_for_user.filter(available_start_time__lte = self.assigned_start_time) #from above data ,get required available records matching assignment-start_time condition 
+        
+        if nearest_available_slot_wrt_start_time.count()>0:
+            nearest_available_slot_wrt_end_time=all_available_events_for_user.order_by('available_end_time').filter(available_end_time__gte = self.assigned_end_time)[:1]
+            if nearest_available_slot_wrt_end_time.count()>0:
+                start_vs_end_wrt_end=OrderedDict(nearest_available_slot_wrt_end_time.values_list('available_start_time','available_end_time'))
+            else:
+                return False    
+        else:
+            return False
 
-        #key-value for ^ data
-        start_time_vs_end_time_for_user_wrt_start_time = OrderedDict(available_records_wrt_start_time.values_list('available_start_time','available_end_time')) 
+        start_time_slot=start_vs_end_wrt_start.keys()[0]
+        initial_end_time=start_vs_end_wrt_start.values()[0]
+        end_time_slot=start_vs_end_wrt_end.values()[0]
 
-        #get closest end time less than assignment-start-time from where check for availibility will start
-        initial_end_time=AssignementData.get_initial_closest_time(self.assigned_start_time,start_time_vs_end_time_for_user_wrt_start_time)
+        records_between_assignment_slots=all_available_events_for_user.order_by('available_start_time').filter(available_start_time__gte=start_time_slot,available_end_time__lte=end_time_slot)
+        start_vs_end_wrt_slot=OrderedDict(records_between_assignment_slots.values_list('available_start_time','available_end_time'))
 
-        #check availibilty wrt all the available records of user not only the ones satisafying available start time condition 
-        result= AssignementData.check_availibilty_wrt_all_available_data(initial_end_time,self.assigned_end_time,start_time_vs_end_time_for_user)
+        result = AssignementData.check_availibilty_wrt_all_available_data(initial_end_time,self.assigned_end_time,start_vs_end_wrt_slot)
         
         return result
-
-
-    @classmethod #returns closest end time less than assignment-start-time from where check for availibility will start
-    def get_initial_closest_time(cls,start_assigned_time,start_time_vs_end_time_for_user_wrt_start_time):
-        current_end_time=start_time_vs_end_time_for_user_wrt_start_time.values()[0]
-        for start_time,end_time in start_time_vs_end_time_for_user_wrt_start_time.items():
-            if start_time<=start_assigned_time: 
-                current_end_time=end_time
-        return current_end_time
 
     @classmethod
     def check_availibilty_wrt_all_available_data(cls,available_end_time,assigned_end_time,start_time_vs_end_time_for_user):
@@ -223,8 +223,6 @@ class AssignementData(models.Model):
             for near_start,near_end in start_time_vs_end_time_for_user.items():
                 if near_start>available_end_time:
                     return AssignementData.check_availibilty_wrt_all_available_data(available_end_time=near_end,assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
-                else:
-                    return False
             return False
             
 
