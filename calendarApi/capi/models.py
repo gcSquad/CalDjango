@@ -16,6 +16,7 @@ from django.core.exceptions import ValidationError
 from google.oauth2.credentials import Credentials
 from django.conf import settings
 from utils import return_dates_in_isoformat
+from django.db.models import Q
 
 class Credential(models.Model):
 
@@ -194,16 +195,20 @@ class AssignementData(models.Model):
             start_time_slot=closest_start_slot[0]
             initial_end_time=closest_start_slot[1]
         else:
-            retun False
+            return False
         
         nearest_available_slot_wrt_end_time=all_available_events_for_user.order_by('available_end_time').filter(available_end_time__gte = self.assigned_end_time)[:1]
         if nearest_available_slot_wrt_end_time.count()>0:
-            end_time_slot=nearest_available_slot_wrt_end_time.values_list('available_end_time')[0][0]
-        else:
-                return False    
+            closest_end_slot=nearest_available_slot_wrt_end_time.values_list('available_start_time','available_end_time')[0]
+            initial_start_time=closest_end_slot[0]
+            end_time_slot=closest_end_slot[1]
 
-        records_between_assignment_slots=all_available_events_for_user.order_by('available_start_time').filter(available_start_time__gte=start_time_slot,available_end_time__lte=end_time_slot)
+        else:
+            return False    
+
+        records_between_assignment_slots= all_available_events_for_user.order_by('available_start_time').filter(Q(available_start_time__gte=start_time_slot,available_end_time__lte=end_time_slot)|Q(available_start_time__lte=initial_end_time)|Q(available_end_time__gte=initial_start_time))
         start_vs_end_wrt_slot=OrderedDict(records_between_assignment_slots.values_list('available_start_time','available_end_time'))
+        print("dict",start_vs_end_wrt_slot)
 
         result = AssignementData.check_availibilty_wrt_all_available_data(initial_end_time,self.assigned_end_time,start_vs_end_wrt_slot)
         
