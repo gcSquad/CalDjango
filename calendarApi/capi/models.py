@@ -186,45 +186,77 @@ class AssignementData(models.Model):
             return event
 
 
+
+
     def check_user_availability(self):
+
         all_available_events_for_user = AvailableData.objects.filter(user__user=self.user.user)
 
-        nearest_available_slot_wrt_start_time=all_available_events_for_user.order_by('-available_start_time').filter(available_start_time__lte = self.assigned_start_time)[:1]
-        if nearest_available_slot_wrt_start_time.count()>0:
-            closest_start_slot= nearest_available_slot_wrt_start_time.values_list('available_start_time','available_end_time')[0]
-            start_time_slot=closest_start_slot[0]
-            closest_start_slot_end_time=closest_start_slot[1]
-        else:
-            return False
+        all_inclusive_slots=all_available_events_for_user.filter(Q(available_start_time__gte=self.assigned_start_time,available_start_time__lte=self.assigned_end_time)|Q(available_end_time__gte=self.assigned_start_time,available_end_time__lte=self.assigned_end_time)).order_by('available_start_time')
+
+
+        start_vs_end_inclusive= OrderedDict(all_inclusive_slots.values_list('available_start_time','available_end_time'))
+
+        current_end_time=self.assigned_end_time
+        for start,end in start_vs_end_inclusive.items():
+
+            if start<= current_end_time:
+                if end>=self.assigned_end_time:
+                    return True
+                else:
+                    current_end_time=end
+            else:
+                return False
+
+
+
+            
+            
+
+
+
+
+
+    # def check_user_availability(self):
+
+    #     all_available_events_for_user = AvailableData.objects.filter(user__user=self.user.user)
+
+    #     nearest_available_slot_wrt_start_time=all_available_events_for_user.order_by('-available_start_time').filter(available_start_time__lte = self.assigned_start_time)[:1]
+    #     if nearest_available_slot_wrt_start_time.count()>0:
+    #         closest_start_slot = nearest_available_slot_wrt_start_time.values_list('available_start_time','available_end_time')[0]
+    #         start_time_slot=closest_start_slot[0]
+    #         closest_start_slot_end_time=closest_start_slot[1]
+    #     else:
+    #         return False
         
-        nearest_available_slot_wrt_end_time=all_available_events_for_user.order_by('available_end_time').filter(available_end_time__gte = self.assigned_end_time)[:1]
-        if nearest_available_slot_wrt_end_time.count()>0:
-            closest_end_slot=nearest_available_slot_wrt_end_time.values_list('available_start_time','available_end_time')[0]
-            closest_end_slot_start_time=closest_end_slot[0]
-            end_time_slot=closest_end_slot[1]
+    #     nearest_available_slot_wrt_end_time=all_available_events_for_user.order_by('available_end_time').filter(available_end_time__gte = self.assigned_end_time)[:1]
+    #     if nearest_available_slot_wrt_end_time.count()>0:
+    #         closest_end_slot=nearest_available_slot_wrt_end_time.values_list('available_start_time','available_end_time')[0]
+    #         closest_end_slot_start_time=closest_end_slot[0]
+    #         end_time_slot=closest_end_slot[1]
 
-        else:
-            return False    
+    #     else:
+    #         return False    
 
-        records_between_assignment_slots= all_available_events_for_user.order_by('available_start_time').filter(Q(available_start_time__gte=start_time_slot,available_end_time__lte=end_time_slot)|Q(available_start_time__lte=closest_start_slot_end_time,available_end_time__gte=closest_end_slot_start_time))
-        start_vs_end_wrt_slot=OrderedDict(records_between_assignment_slots.values_list('available_start_time','available_end_time'))
+    #     records_between_assignment_slots= all_available_events_for_user.order_by('available_start_time').filter(Q(available_start_time__gte=start_time_slot,available_end_time__lte=end_time_slot)|Q(available_start_time__lte=closest_start_slot_end_time,available_end_time__gte=closest_end_slot_start_time))
+    #     start_vs_end_wrt_slot=OrderedDict(records_between_assignment_slots.values_list('available_start_time','available_end_time'))
 
-        result = AssignementData.check_availibilty_wrt_all_available_data(closest_start_slot_end_time,self.assigned_end_time,start_vs_end_wrt_slot)
+    #     result = AssignementData.check_availibilty_wrt_all_available_data(closest_start_slot_end_time,self.assigned_end_time,start_vs_end_wrt_slot)
         
-        return result
+    #     return result
 
-    @classmethod
-    def check_availibilty_wrt_all_available_data(cls,closest_start_slot_end_time,assigned_end_time,start_time_vs_end_time_for_user):
-        if closest_start_slot_end_time >= assigned_end_time:
-            return True 
+    # @classmethod
+    # def check_availibilty_wrt_all_available_data(cls,closest_start_slot_end_time,assigned_end_time,start_time_vs_end_time_for_user):
+    #     if closest_start_slot_end_time >= assigned_end_time:
+    #         return True 
 
-        if closest_start_slot_end_time in start_time_vs_end_time_for_user: #this condition will ensure chaining of time-slots like 06:00-06:15,06:15-07:30 and so on
-            return AssignementData.check_availibilty_wrt_all_available_data(closest_start_slot_end_time=start_time_vs_end_time_for_user[closest_start_slot_end_time],assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
-        else:#this will ensure checks for inclusive slots like 06:00-06:30,06:15-07:30
-            for near_start,near_end in start_time_vs_end_time_for_user.items():
-                if near_start>closest_start_slot_end_time:
-                    return AssignementData.check_availibilty_wrt_all_available_data(closest_start_slot_end_time=near_end,assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
-            return False
+    #     if closest_start_slot_end_time in start_time_vs_end_time_for_user: #this condition will ensure chaining of time-slots like 06:00-06:15,06:15-07:30 and so on
+    #         return AssignementData.check_availibilty_wrt_all_available_data(closest_start_slot_end_time=start_time_vs_end_time_for_user[closest_start_slot_end_time],assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
+    #     else:#this will ensure checks for inclusive slots like 06:00-06:30,06:15-07:30
+    #         for near_start,near_end in start_time_vs_end_time_for_user.items():
+    #             if near_start>closest_start_slot_end_time:
+    #                 return AssignementData.check_availibilty_wrt_all_available_data(closest_start_slot_end_time=near_end,assigned_end_time=assigned_end_time,start_time_vs_end_time_for_user=start_time_vs_end_time_for_user)
+    #         return False
             
 
         
