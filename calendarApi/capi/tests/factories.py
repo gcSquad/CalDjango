@@ -6,9 +6,9 @@ import random
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = UserData
-    user= random.randrange(0,100,2)
     personal_email= factory.Faker('email')
     username = factory.Faker('name')
+    timeZone = pytz.timezone('Asia/Kolkata')
 
 class AvailabledataFactory(factory.django.DjangoModelFactory):
     class Meta:

@@ -15,7 +15,7 @@ import json
 from django.core.exceptions import ValidationError
 from google.oauth2.credentials import Credentials
 from django.conf import settings
-from utils import return_dates_in_isoformat,convert_into_local_timezone
+from utils import return_dates_in_isoformat
 from django.db.models import Q
 from timezone_field import TimeZoneField
 import pytz
@@ -187,8 +187,6 @@ class AssignementData(models.Model):
         else:
             event = service.events().insert(calendarId='primary', body=event).execute()
             return event
-
-
 
 
     def check_user_availability(self):

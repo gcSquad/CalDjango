@@ -10,7 +10,7 @@ from utils import return_dates_in_isoformat
 class Assignementdata_test(TestCase):
 
     def test_check_user_availability(self):
-        user=AvailabledataFactory().user
+        user=AvailabledataFactory().id
         time_start= timezone.now()
         time_end = timezone.now() + datetime.timedelta(hours=1)
         check_availability = AssignementData(user=user,assigned_start_time=time_start,assigned_end_time=time_end)
