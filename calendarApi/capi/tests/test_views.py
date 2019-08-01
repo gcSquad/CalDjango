@@ -1,8 +1,8 @@
 from django.test import RequestFactory, TestCase
 from django.utils import timezone 
-from .models import AssignementData,AvailableData,UserData,Credential
+from capi.models import AssignementData,AvailableData,UserData,Credential
 from factories import UserFactory,AssignementFactory,AvailabledataFactory
-from .views import capture_token,import_data
+from capi.views import capture_token,import_data
 from django.contrib.auth.models import AnonymousUser, User
 
 class CaptureTokenTest(TestCase):

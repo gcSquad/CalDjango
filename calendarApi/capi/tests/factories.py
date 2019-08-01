@@ -1,13 +1,16 @@
 import datetime
 import factory
 from faker import Faker
+from capi.models import AssignementData,AvailableData,UserData,Credential
 import random 
+import pytz
+from django.utils import timezone
 
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = UserData
-    personal_email= factory.Faker('email')
-    username = factory.Faker('name')
+    personal_email= "gaurav.chaturvedi@squadrun.co"
+    username = "SquadG"
     timeZone = pytz.timezone('Asia/Kolkata')
 
 class AvailabledataFactory(factory.django.DjangoModelFactory):
@@ -22,5 +25,5 @@ class AssignementFactory(factory.django.DjangoModelFactory):
         model = AssignementData
     user=factory.SubFactory(UserFactory)
     assigned_start_time=timezone.now()
-    assigned_end_time=timezone.now()+datetime.timedelta(hours=3)
+    assigned_end_time=timezone.now()+datetime.timedelta(hours=2)
    

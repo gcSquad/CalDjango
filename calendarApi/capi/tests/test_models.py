@@ -3,24 +3,21 @@ from __future__ import unicode_literals
 from django.test import TestCase
 import datetime
 from django.utils import timezone 
-from .models import AssignementData,AvailableData,UserData,Credential
+from capi.models import AssignementData,AvailableData,UserData,Credential
 from mock import Mock, patch
-from utils import return_dates_in_isoformat
+from capi.utils import return_dates_in_isoformat
 from factories import UserFactory,AssignementFactory,AvailabledataFactory
 
 class Assignementdata_test(TestCase):
 
     def test_check_user_availability(self):
-        user=AvailabledataFactory().id
-        time_start= timezone.now()
-        time_end = timezone.now() + datetime.timedelta(hours=1)
-        check_availability = AssignementData(user=user,assigned_start_time=time_start,assigned_end_time=time_end)
-        self.assertIs(check_availability.check_user_availability(), True)
+        new_task=AssignementFactory()
+        self.assertIs(new_task.check_user_availability(), True)
 
     @patch('capi.models.AssignementData.create_appointment_event')
     def test_save_appointment_to_calendar(self,mock_create_appointment_event):
         new_task=AssignementFactory()
-        mock_create_appointment_event.return_value={"id":"vpadtdvcr0n9nreq95a293bkog"},False
+        mock_create_appointment_event.return_value={"id":"vpadtdvcr0n9nreq95a293bkog"}
         new_task.save_appointment_to_calendar("gaurav.chaturvedi@squadrun.co")
         self.assertIs(new_task.event_id,"vpadtdvcr0n9nreq95a293bkog")
 
@@ -36,7 +33,7 @@ class Availabledata_test(TestCase):
 
         time_start= timezone.now()+ datetime.timedelta(hours=3)
         time_end = timezone.now() + datetime.timedelta(hours=5)
-        user=UserData.objects.create(user= 2,personal_email="gauarv.chaturvedi@squadrun.co",
+        user=UserData.objects.create(personal_email="gauarv.chaturvedi@squadrun.co",
             username = "Gaurav")
         AvailableData.objects.create(user=user,available_start_time=time_start,available_end_time=time_end)
         event=[{
@@ -52,7 +49,7 @@ class Availabledata_test(TestCase):
             }
         }] 
 
-        new_test_object=  AvailableData.objects.get(user_id=2)
+        new_test_object=  AvailableData.objects.get(user__username="Gaurav")
         new_test_object.save_new_events_in_db(event)
         next_count=AvailableData.objects.all().count()
         self.assertIs(next_count>prev_count,True)
