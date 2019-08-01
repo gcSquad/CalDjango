@@ -104,6 +104,18 @@ class AvailableData(models.Model):
     available_end_time =models.DateTimeField()
     event_id = models.CharField(max_length=100,blank=True,null=True)
 
+    def start_time(self):
+        user_timezone=self.user.timeZone
+        start_time =user_timezone.localize(self.available_start_time.replace(tzinfo=None))
+        print(start_time)
+        return start_time
+    
+    def end_time(self):
+        user_timezone=self.user.timeZone
+        end_time =user_timezone.localize(self.available_end_time.replace(tzinfo=None))
+        return end_time
+    
+
     class Meta:
         verbose_name_plural = "availableData"
 
@@ -164,11 +176,7 @@ class AssignementData(models.Model):
         player_email=self.user.personal_email
         start_time = self.assigned_start_time.isoformat()
         end_time = self.assigned_end_time.isoformat()
-        if self.user.timeZone:
-            timeZone=self.user.timeZone
-        else:
-            timeZone=settings.TIME_ZONE
-
+        
         credentials = Credential.objects.get(user_email=logged_in_user_email).get_credentials()
         service = build("calendar", "v3", credentials=credentials)
         event = {
@@ -176,11 +184,9 @@ class AssignementData(models.Model):
             'description': 'Time for work.',
             'start': {
                 'dateTime': start_time,
-                'timeZone':timeZone, 
             },
             'end': {
                 'dateTime': end_time,
-                'timeZone':timeZone, 
             },
             'attendees': [
                 {'email': player_email},
@@ -199,12 +205,11 @@ class AssignementData(models.Model):
 
     def check_user_availability(self):
 
-        all_available_events_for_user = AvailableData.objects.filter(user__id=self.user.id)
+        all_available_events_for_user = AvailableData.objects.filter(user_id=self.user_id)
         
-        user_timezone=pytz.timezone(self.user.timeZone)
-        assign_start_time =user_timezone.localize(self.assigned_start_time.replace(tzinfo=None)).astimezone(pytz.UTC)
-        print(assign_start_time)
-        assign_end_time =user_timezone.localize(self.assigned_end_time.replace(tzinfo=None)).astimezone(pytz.UTC)
+        user_timezone=self.user.timeZone
+        assign_start_time =user_timezone.localize(self.assigned_start_time.replace(tzinfo=None))
+        assign_end_time =user_timezone.localize(self.assigned_end_time.replace(tzinfo=None))
 
         all_inclusive_slots=all_available_events_for_user.filter(Q(available_start_time__gte=assign_start_time,available_start_time__lte=assign_end_time)|Q(available_end_time__gte=assign_start_time,available_end_time__lte=assign_end_time)).order_by('available_start_time','available_end_time')
 

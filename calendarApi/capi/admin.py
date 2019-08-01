@@ -9,8 +9,8 @@ class UserDataAdmin(admin.ModelAdmin):
     list_display=('username','personal_email','timeZone')
     
 class AvailableDataAdmin(admin.ModelAdmin):
-    list_display=('user','available_start_time','available_end_time')
-    readonly_fields=('user','available_start_time','available_end_time','event_id',)
+    list_display=('user','start_time','end_time')
+    readonly_fields=('user','start_time','end_time','event_id',)
 
 class AssignementAdmin(admin.ModelAdmin):
     list_display=('user','assigned_start_time','assigned_end_time','event_id')
