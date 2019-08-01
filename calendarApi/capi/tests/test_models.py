@@ -6,6 +6,7 @@ from django.utils import timezone
 from .models import AssignementData,AvailableData,UserData,Credential
 from mock import Mock, patch
 from utils import return_dates_in_isoformat
+from factories import UserFactory,AssignementFactory,AvailabledataFactory
 
 class Assignementdata_test(TestCase):
 
