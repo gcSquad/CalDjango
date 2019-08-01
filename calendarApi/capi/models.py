@@ -17,9 +17,7 @@ from google.oauth2.credentials import Credentials
 from django.conf import settings
 from utils import return_dates_in_isoformat,convert_into_local_timezone
 from django.db.models import Q
-
-
-import datetime
+from timezone_field import TimeZoneField
 import pytz
 
 
@@ -92,7 +90,7 @@ class Credential(models.Model):
 class UserData(models.Model):
     personal_email=  models.EmailField(max_length=70, unique= True)
     username = models.CharField(max_length=120)
-    timeZone = models.CharField(max_length=50,null=True)
+    timeZone = TimeZoneField()
     
     class Meta:
         verbose_name_plural = "users"
