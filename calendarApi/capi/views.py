@@ -71,8 +71,12 @@ def logout_user(request):
 
 def render_home(request):
     assignment_records= AssignementData.objects.filter(user=request.user.id)
+    for assignment in assignment_records:
+        user_timezone=assignment.user.timeZone
+        assignment.assigned_start_time =(assignment.assigned_start_time.astimezone(user_timezone)).strftime("%d %b, %Y %I:%M %p")
+        assignment.assigned_end_time =(assignment.assigned_end_time.astimezone(user_timezone)).strftime("%d %b, %Y %I:%M %p")    
     context={
-                  "assignment_records":assignment_records  
+                  "assignment_records":assignment_records
             }
     return render(request,'home.html',context)
 

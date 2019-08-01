@@ -12,6 +12,7 @@
         <h3>Your assignments</h3>
         {% if assignment_records %}
         {% for record in assignment_records %}
+        
         <p>{{ record.assigned_start_time }}</p>
         {% endfor %}
         {% else %}

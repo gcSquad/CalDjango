@@ -12,9 +12,30 @@ class AvailableDataAdmin(admin.ModelAdmin):
     list_display=('user','start_time','end_time')
     readonly_fields=('user','start_time','end_time','event_id',)
 
+    def start_time(request,obj):
+        user_timezone=obj.user.timeZone
+        start_time =obj.available_start_time.astimezone(user_timezone)
+        return start_time.strftime("%d %b, %Y %I:%M %p")
+    
+    def end_time(request,obj):
+        user_timezone=obj.user.timeZone
+        end_time =obj.available_end_time.astimezone(user_timezone)
+        return end_time.strftime("%d %b, %Y %I:%M %p")
+    
+
 class AssignementAdmin(admin.ModelAdmin):
-    list_display=('user','assigned_start_time','assigned_end_time','event_id')
+    list_display=('user','start_time','end_time','event_id')
     readonly_fields=('event_id',)
+
+    def start_time(request,obj):
+        user_timezone=obj.user.timeZone
+        start_time =obj.assigned_start_time.astimezone(user_timezone)
+        return start_time.strftime("%d %b, %Y %I:%M %p")
+    
+    def end_time(request,obj):
+        user_timezone=obj.user.timeZone
+        end_time =obj.assigned_end_time.astimezone(user_timezone)
+        return end_time.strftime("%d %b, %Y %I:%M %p")
 
     def save_model(self, request, obj, form, change):
         super(AssignementAdmin, self).save_model(request, obj, form, change)

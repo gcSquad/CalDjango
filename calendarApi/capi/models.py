@@ -104,18 +104,6 @@ class AvailableData(models.Model):
     available_end_time =models.DateTimeField()
     event_id = models.CharField(max_length=100,blank=True,null=True)
 
-    def start_time(self):
-        user_timezone=self.user.timeZone
-        start_time =user_timezone.localize(self.available_start_time.replace(tzinfo=None))
-        print(start_time)
-        return start_time
-    
-    def end_time(self):
-        user_timezone=self.user.timeZone
-        end_time =user_timezone.localize(self.available_end_time.replace(tzinfo=None))
-        return end_time
-    
-
     class Meta:
         verbose_name_plural = "availableData"
 
@@ -208,10 +196,10 @@ class AssignementData(models.Model):
         all_available_events_for_user = AvailableData.objects.filter(user_id=self.user_id)
         
         user_timezone=self.user.timeZone
-        assign_start_time =user_timezone.localize(self.assigned_start_time.replace(tzinfo=None))
-        assign_end_time =user_timezone.localize(self.assigned_end_time.replace(tzinfo=None))
+        self.assigned_start_time=user_timezone.localize(self.assigned_start_time.replace(tzinfo=None))
+        self.assigned_end_time =user_timezone.localize(self.assigned_end_time.replace(tzinfo=None))
 
-        all_inclusive_slots=all_available_events_for_user.filter(Q(available_start_time__gte=assign_start_time,available_start_time__lte=assign_end_time)|Q(available_end_time__gte=assign_start_time,available_end_time__lte=assign_end_time)).order_by('available_start_time','available_end_time')
+        all_inclusive_slots=all_available_events_for_user.filter(Q(available_start_time__gte=self.assigned_start_time,available_start_time__lte=self.assigned_end_time)|Q(available_end_time__gte=self.assigned_start_time,available_end_time__lte=self.assigned_end_time)).order_by('available_start_time','available_end_time')
 
         if all_inclusive_slots.count()>0:
             available_slots=all_inclusive_slots.values_list('available_start_time','available_end_time')
