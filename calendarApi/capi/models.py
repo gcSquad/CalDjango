@@ -19,6 +19,10 @@ from utils import return_dates_in_isoformat,convert_into_local_timezone
 from django.db.models import Q
 
 
+import datetime
+import pytz
+
+
 
 class Credential(models.Model):
 
@@ -62,8 +66,8 @@ class Credential(models.Model):
 
     def get_all_events_for_admin(self,credential_object):
         
-        time_min = return_dates_in_isoformat(2,'subtract')
-        time_max = return_dates_in_isoformat(2,'add') 
+        time_min = return_dates_in_isoformat(5,'subtract')
+        time_max = return_dates_in_isoformat(5,'add') 
 
         service = build('calendar', 'v3', credentials=credential_object)
         events_result = service.events().list(calendarId='primary',singleEvents=True,timeMin=time_min,timeMax=time_max,orderBy='startTime').execute()
@@ -120,12 +124,9 @@ class AvailableData(models.Model):
              if  event['id'] not in existing_event_id_list and event['creator']['email'] in email_vs_user_object_map:
                  
                 user_id=email_vs_user_object_map[event['creator']['email']]
-                local_timezone=all_users.get(id=user_id).timeZone
-                local_start_time=convert_into_local_timezone(event['start']['dateTime'],local_timezone)
-                local_end_time=convert_into_local_timezone(event['end']['dateTime'],local_timezone)
                 new_available_object= cls(event_id=event['id'],user_id=user_id,
-                                available_end_time=local_end_time,
-                                available_start_time=local_start_time
+                                available_end_time=event['end']['dateTime'],
+                                available_start_time=event['start']['dateTime']
                                 )
                 new_available_data_objects.append(new_available_object)
         cls.objects.bulk_create(new_available_data_objects)   
@@ -153,6 +154,8 @@ class AssignementData(models.Model):
     def save_appointment_to_calendar(self,logged_in_user_email):
         
         event = self.create_appointment_event(logged_in_user_email)
+        # convert_into_local_timezone(ev)
+
         if not self.event_id:
             self.event_id=event['id']
             self.save(update_fields=["event_id"])
@@ -199,8 +202,13 @@ class AssignementData(models.Model):
     def check_user_availability(self):
 
         all_available_events_for_user = AvailableData.objects.filter(user__id=self.user.id)
+        
+        user_timezone=pytz.timezone(self.user.timeZone)
+        assign_start_time =user_timezone.localize(self.assigned_start_time.replace(tzinfo=None)).astimezone(pytz.UTC)
+        print(assign_start_time)
+        assign_end_time =user_timezone.localize(self.assigned_end_time.replace(tzinfo=None)).astimezone(pytz.UTC)
 
-        all_inclusive_slots=all_available_events_for_user.filter(Q(available_start_time__gte=self.assigned_start_time,available_start_time__lte=self.assigned_end_time)|Q(available_end_time__gte=self.assigned_start_time,available_end_time__lte=self.assigned_end_time)).order_by('available_start_time','available_end_time')
+        all_inclusive_slots=all_available_events_for_user.filter(Q(available_start_time__gte=assign_start_time,available_start_time__lte=assign_end_time)|Q(available_end_time__gte=assign_start_time,available_end_time__lte=assign_end_time)).order_by('available_start_time','available_end_time')
 
         if all_inclusive_slots.count()>0:
             available_slots=all_inclusive_slots.values_list('available_start_time','available_end_time')
