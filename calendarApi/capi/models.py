@@ -15,8 +15,10 @@ import json
 from django.core.exceptions import ValidationError
 from google.oauth2.credentials import Credentials
 from django.conf import settings
-from utils import return_dates_in_isoformat
+from utils import return_dates_in_isoformat,convert_into_local_timezone
 from django.db.models import Q
+
+
 
 class Credential(models.Model):
 
@@ -84,9 +86,9 @@ class Credential(models.Model):
 
             
 class UserData(models.Model):
-    user = models.AutoField(primary_key=True,db_column="userID")
     personal_email=  models.EmailField(max_length=70, unique= True)
     username = models.CharField(max_length=120)
+    timeZone = models.CharField(max_length=50,null=True)
     
     class Meta:
         verbose_name_plural = "users"
@@ -111,19 +113,20 @@ class AvailableData(models.Model):
     def save_new_events_in_db(cls,events):
 
         existing_event_id_list = list(AvailableData.objects.values_list('event_id',flat=True))
-        email_vs_user_object_map =dict(UserData.objects.values_list('personal_email','user'))
+        all_users=UserData.objects.all()
+        email_vs_user_object_map =dict(all_users.values_list('personal_email','id'))
         new_available_data_objects=[]
-
         for event in events:
-
              if  event['id'] not in existing_event_id_list and event['creator']['email'] in email_vs_user_object_map:
                  
-                user=email_vs_user_object_map[event['creator']['email']]
-                new_available_object= cls(event_id=event['id'],user_id=user,
-                                available_end_time=event['end']['dateTime'],
-                                available_start_time=event['start']['dateTime']
+                user_id=email_vs_user_object_map[event['creator']['email']]
+                local_timezone=all_users.get(id=user_id).timeZone
+                local_start_time=convert_into_local_timezone(event['start']['dateTime'],local_timezone)
+                local_end_time=convert_into_local_timezone(event['end']['dateTime'],local_timezone)
+                new_available_object= cls(event_id=event['id'],user_id=user_id,
+                                available_end_time=local_end_time,
+                                available_start_time=local_start_time
                                 )
-
                 new_available_data_objects.append(new_available_object)
         cls.objects.bulk_create(new_available_data_objects)   
 
@@ -150,7 +153,6 @@ class AssignementData(models.Model):
     def save_appointment_to_calendar(self,logged_in_user_email):
         
         event = self.create_appointment_event(logged_in_user_email)
-
         if not self.event_id:
             self.event_id=event['id']
             self.save(update_fields=["event_id"])
@@ -161,6 +163,10 @@ class AssignementData(models.Model):
         player_email=self.user.personal_email
         start_time = self.assigned_start_time.isoformat()
         end_time = self.assigned_end_time.isoformat()
+        if self.user.timeZone:
+            timeZone=self.user.timeZone
+        else:
+            timeZone=settings.TIME_ZONE
 
         credentials = Credential.objects.get(user_email=logged_in_user_email).get_credentials()
         service = build("calendar", "v3", credentials=credentials)
@@ -168,10 +174,12 @@ class AssignementData(models.Model):
             'summary': 'Meeting Scheduled',
             'description': 'Time for work.',
             'start': {
-                'dateTime': start_time, 
+                'dateTime': start_time,
+                'timeZone':timeZone, 
             },
             'end': {
-                'dateTime': end_time,   
+                'dateTime': end_time,
+                'timeZone':timeZone, 
             },
             'attendees': [
                 {'email': player_email},
@@ -190,18 +198,21 @@ class AssignementData(models.Model):
 
     def check_user_availability(self):
 
-        all_available_events_for_user = AvailableData.objects.filter(user__user=self.user.user)
+        all_available_events_for_user = AvailableData.objects.filter(user__id=self.user.id)
 
         all_inclusive_slots=all_available_events_for_user.filter(Q(available_start_time__gte=self.assigned_start_time,available_start_time__lte=self.assigned_end_time)|Q(available_end_time__gte=self.assigned_start_time,available_end_time__lte=self.assigned_end_time)).order_by('available_start_time','available_end_time')
 
-        available_slots=all_inclusive_slots.values_list('available_start_time','available_end_time')
-        prev_start_time, prev_end_time = available_slots[0]
-        for start_time, end_time in available_slots[1:]:
-            if start_time > prev_end_time:
-                return False
-            prev_start_time, prev_end_time = start_time, end_time
+        if all_inclusive_slots.count()>0:
+            available_slots=all_inclusive_slots.values_list('available_start_time','available_end_time')
+            prev_start_time, prev_end_time = available_slots[0]
+            for start_time, end_time in available_slots[1:]:
+                if start_time > prev_end_time:
+                    return False
+                prev_start_time, prev_end_time = start_time, end_time
 
-        return True
+            return True
+        else:
+            return False
 
 
 

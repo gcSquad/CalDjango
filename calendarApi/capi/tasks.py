@@ -7,6 +7,9 @@ def set_calendar_appointment(record_id,current_user_email):
     assignment_object=AssignementData.objects.get(id=record_id)
     assignment_object.save_appointment_to_calendar(current_user_email)
 
+
+   
+
    
 
     

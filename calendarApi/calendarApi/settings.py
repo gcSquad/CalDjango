@@ -143,6 +143,6 @@ CELERY_RESULT_SERIALIZER = 'json'
 # }
 LOGIN_REDIRECT_URL = 'home'
 
-AUTH_REDIRECT_URI="http://038e447a.ngrok.io"
+AUTH_REDIRECT_URI="http://localhost:8000"
 
 AUTH_SCOPE=['https://www.googleapis.com/auth/calendar']
