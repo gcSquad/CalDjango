@@ -191,13 +191,12 @@ class AssignementData(models.Model):
 
     def check_user_availability(self):
 
-        all_available_events_for_user = AvailableData.objects.filter(user_id=self.user_id)
-        
+        all_available_events_for_user = AvailableData.objects.filter(user__username=self.user.username)
         user_timezone=self.user.timeZone
         self.assigned_start_time=user_timezone.localize(self.assigned_start_time.replace(tzinfo=None))
         self.assigned_end_time =user_timezone.localize(self.assigned_end_time.replace(tzinfo=None))
 
-        all_inclusive_slots=all_available_events_for_user.filter(Q(available_start_time__gte=self.assigned_start_time,available_start_time__lte=self.assigned_end_time)|Q(available_end_time__gte=self.assigned_start_time,available_end_time__lte=self.assigned_end_time)).order_by('available_start_time','available_end_time')
+        all_inclusive_slots=all_available_events_for_user.filter(Q(available_start_time__lte=self.assigned_start_time,available_end_time__gte=self.assigned_start_time)|Q(available_start_time__lte=self.assigned_end_time,available_end_time__gte=self.assigned_end_time)).order_by('available_start_time','available_end_time')
 
         if all_inclusive_slots.count()>0:
             available_slots=all_inclusive_slots.values_list('available_start_time','available_end_time')
@@ -205,8 +204,7 @@ class AssignementData(models.Model):
             for start_time, end_time in available_slots[1:]:
                 if start_time > prev_end_time:
                     return False
-                prev_start_time, prev_end_time = start_time, end_time
-
+                prev_end_time = max(prev_end_time, end_time)
             return True
         else:
             return False
