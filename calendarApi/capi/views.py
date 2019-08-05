@@ -23,7 +23,7 @@ def capture_token(request):
     except ConnectionError as error:
         messages.error(request,error)
         return HttpResponseRedirect(reverse('admin:capi_availabledata_changelist'))
-    
+
     Credential.save_captured_token(state=state,code=code,email=request.user.email)
     return HttpResponseRedirect(reverse('import_data'))
 

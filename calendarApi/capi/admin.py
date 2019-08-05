@@ -20,16 +20,13 @@ class AvailableDataAdmin(admin.ModelAdmin):
 
     def start_time(request,obj):
         user_timezone=obj.user.timeZone
-        print(user_timezone)
         start_time =obj.available_start_time.astimezone(user_timezone)
-        print(type(start_time))
         return start_time.strftime("%d %b, %Y %I:%M %p (")+ str(user_timezone)+(")")
     
     def end_time(request,obj):
         user_timezone=obj.user.timeZone
         end_time =obj.available_end_time.astimezone(user_timezone)
         localtime = end_time.tzname()
-        print(localtime)
         return end_time.strftime("%d %b, %Y %I:%M %p (")+ str(user_timezone)+(")")
     
 
