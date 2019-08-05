@@ -152,7 +152,7 @@ class AssignementData(models.Model):
     def save_appointment_to_calendar(self,logged_in_user_email):
         
         event = self.create_appointment_event(logged_in_user_email)
-        
+
         if not self.event_id:
             self.event_id=event['id']
             self.save(update_fields=["event_id"])
@@ -195,8 +195,8 @@ class AssignementData(models.Model):
         self.assigned_start_time=user_timezone.localize(self.assigned_start_time.replace(tzinfo=None))
         self.assigned_end_time =user_timezone.localize(self.assigned_end_time.replace(tzinfo=None))
 
-        all_inclusive_slots=all_available_events_for_user.filter(Q(available_start_time__gte=self.assigned_start_time,available_start_time__lte=self.assigned_end_time)|Q(available_end_time__gte=self.assigned_start_time,available_end_time__lte=self.assigned_end_time)).order_by('available_start_time','available_end_time')
-
+        all_inclusive_slots=all_available_events_for_user.filter(Q(available_start_time__gte=self.assigned_start_time,available_start_time__lte=self.assigned_end_time)|Q(available_end_time__gte=self.assigned_start_time,available_end_time__lte=self.assigned_end_time)|Q(available_start_time__lte=self.assigned_start_time,available_end_time__gte=self.assigned_end_time)).order_by('available_start_time','available_end_time')
+        
         if all_inclusive_slots.count()>0:
             available_slots=all_inclusive_slots.values_list('available_start_time','available_end_time')
             prev_start_time, prev_end_time = available_slots[0]
