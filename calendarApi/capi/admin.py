@@ -10,14 +10,8 @@ class UserDataAdmin(admin.ModelAdmin):
     list_display=('username','personal_email','timeZone')
     
 class AvailableDataAdmin(admin.ModelAdmin):
-    # change_list_template = 'admin/demo_change_list.html'
     list_display=('user','start_time','end_time')
     readonly_fields=('user','start_time','end_time','event_id',)
-    
-
-    # def changelist_view(self, request, extra_context=None):
-    #     return super(AvailableDataAdmin, self).changelist_view(request, extra_context=extra_context)
-
     def start_time(request,obj):
         user_timezone=obj.user.timeZone
         start_time =obj.available_start_time.astimezone(user_timezone)
