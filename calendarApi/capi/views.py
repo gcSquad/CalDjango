@@ -12,16 +12,18 @@ from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.views.generic import ListView
+from rest_framework import status
 from requests.exceptions import ConnectionError
 import json
+from django.contrib.auth.decorators import login_required
 
-
+@login_required
 def capture_token(request):
     try:
         state=request.GET["state"]
         code=request.GET["code"]
-    except ConnectionError as error:
-        messages.error(request,error)
+    except KeyError:
+        state=False
         return HttpResponseRedirect(reverse('admin:capi_availabledata_changelist'))
 
     Credential.save_captured_token(state=state,code=code,email=request.user.email)
@@ -47,7 +49,7 @@ class Login(TemplateView):
     template_name = 'login.html'
 
     def get(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
+        if request.user.is_authenticated():
             return HttpResponseRedirect(reverse('home'))
         return render(request, self.template_name)
 
@@ -60,9 +62,10 @@ class Login(TemplateView):
             login(request, user)
             return HttpResponseRedirect(reverse('home'))
         else:
-            messages.error(request,"wrong username/password")
-            return Response(request,self.template_name)
-
+            context={
+                  "invalid_user":True
+            }
+            return render(request,'login.html',context)
 
 def logout_user(request):
     logout(request)

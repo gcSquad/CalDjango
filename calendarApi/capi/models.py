@@ -49,7 +49,6 @@ class Credential(models.Model):
         flow = InstalledAppFlow.from_client_config(self.client_secret_file, scopes=settings.AUTH_SCOPE)
         flow.redirect_uri= settings.AUTH_REDIRECT_URI+reverse('capture_token')
         auth_url,state = flow.authorization_url(access_type="offline",prompt="consent")
-
         self.state = state
         self.save(update_fields=["state"])
 
@@ -59,7 +58,7 @@ class Credential(models.Model):
 
         credential_object= self.get_credentials()
         events = self.get_all_events_for_admin(credential_object)
-        
+        print("event",events)
         return events
 
     def get_all_events_for_admin(self,credential_object):
@@ -120,7 +119,6 @@ class AvailableData(models.Model):
         new_available_data_objects=[]
         for event in events:
              if  event['id'] not in existing_event_id_list and event['creator']['email'] in email_vs_user_object_map:
-                 
                 user_id=email_vs_user_object_map[event['creator']['email']]
                 new_available_object= cls(event_id=event['id'],user_id=user_id,
                                 available_end_time=event['end']['dateTime'],
