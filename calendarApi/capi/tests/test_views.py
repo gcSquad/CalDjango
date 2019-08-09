@@ -12,7 +12,7 @@ import pytz
 import datetime
 from django.utils import timezone 
 
-class LoginViewTest(APITestCase):
+class LoginViewTestCase(APITestCase):
 
     def test_get_without_login(self):
         response = self.client.get('/capi/login/', follow=True)
@@ -48,7 +48,7 @@ class LoginViewTest(APITestCase):
         self.assertEquals(response.context['invalid_user'], True)
         
 
-class TestHomeView(TestCase):
+class TestHomeViewCase(TestCase):
 
     def test_call_view_home(self):
         User.objects.create_user('SquadG', password='admin123')
@@ -58,15 +58,16 @@ class TestHomeView(TestCase):
         time_end = (timezone.now()- datetime.timedelta(hours=5)).astimezone(pytz.timezone('Asia/Kolkata'))
         test_object=AssignementDataFactory(user=user,assigned_start_time=time_start,assigned_end_time=time_end)
         time_check=(time_start.astimezone(pytz.timezone('Asia/Kolkata'))).strftime("%d %b, %Y %I:%M %p")
-        self.client.login(username="SquadG", password='admin123') 
-        response = self.client.get('/capi/')
+        self.client.login(username="SquadG", password='admin123')
+        with self.assertNumQueries(4): #again missed one session and auth hit so thought 2 initially
+            response = self.client.get('/capi/')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'home.html')
         self.assertEquals(response.context['assignment_records'][0].assigned_start_time,time_check)
 
 
 
-class CaptureTokenTest(TestCase):
+class CaptureTokenTestCase(TestCase):
     @patch('capi.models.Credential.save_captured_token')
     def test_capture_token(self,mock_save_captured_token):
 
@@ -84,7 +85,7 @@ class CaptureTokenTest(TestCase):
         self.assertEqual(response.status_code,302)
         
 
-class ImportDataTest(TestCase):
+class ImportDataTestCase(TestCase):
     @patch('capi.models.Credential.get_fresh_available_data')
     @patch('capi.models.AvailableData.save_new_events_in_db')
     @patch('capi.models.Credential.return_auth_url')

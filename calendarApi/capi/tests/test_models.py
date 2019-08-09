@@ -10,7 +10,7 @@ from capi.utils import return_dates_in_isoformat
 from django.core.exceptions import ValidationError
 from factories import UserDataFactory,AssignementDataFactory,AvailableDataFactory,CredentialFactory
 
-class AssignementDatatest(TestCase):
+class AssignementDataTestCase(TestCase):
 
     @patch('capi.models.AssignementData.check_user_availability')
     def test_clean(self,mock_check_user_availability):
@@ -95,7 +95,7 @@ class AssignementDatatest(TestCase):
 
 
 
-class AvailableDataTest(TestCase):
+class AvailableDataTestCase(TestCase):
       
     def test_save_new_events_in_db(self):
         prev_count=AvailableData.objects.all().count()
@@ -159,7 +159,7 @@ class AvailableDataTest(TestCase):
 
 
 
-class CredentialTest(TestCase):
+class CredentialTestCase(TestCase):
 
     @patch('google_auth_oauthlib.flow.InstalledAppFlow.from_client_config')
     def test_return_auth_url(self,mock_from_client_config):

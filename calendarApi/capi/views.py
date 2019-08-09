@@ -23,7 +23,6 @@ def capture_token(request):
         state=request.GET["state"]
         code=request.GET["code"]
     except KeyError:
-        state=False
         return HttpResponseRedirect(reverse('admin:capi_availabledata_changelist'))
 
     Credential.save_captured_token(state=state,code=code,email=request.user.email)
@@ -73,8 +72,8 @@ def logout_user(request):
 
 def render_home(request):
     assignment_records= AssignementData.objects.filter(user=request.user.id)
+    user_timezone=UserData.objects.get(id=request.user.id).timeZone
     for assignment in assignment_records:
-        user_timezone=assignment.user.timeZone
         assignment.assigned_start_time =(assignment.assigned_start_time.astimezone(user_timezone)).strftime("%d %b, %Y %I:%M %p")
         assignment.assigned_end_time =(assignment.assigned_end_time.astimezone(user_timezone)).strftime("%d %b, %Y %I:%M %p")    
     context={

@@ -58,7 +58,6 @@ class Credential(models.Model):
 
         credential_object= self.get_credentials()
         events = self.get_all_events_for_admin(credential_object)
-        print("event",events)
         return events
 
     def get_all_events_for_admin(self,credential_object):
