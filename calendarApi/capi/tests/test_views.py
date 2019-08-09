@@ -48,7 +48,7 @@ class LoginViewTestCase(APITestCase):
         self.assertEquals(response.context['invalid_user'], True)
         
 
-class TestHomeViewCase(TestCase):
+class HomeViewTestCase(TestCase):
 
     def test_call_view_home(self):
         User.objects.create_user('SquadG', password='admin123')
@@ -59,13 +59,14 @@ class TestHomeViewCase(TestCase):
         test_object=AssignementDataFactory(user=user,assigned_start_time=time_start,assigned_end_time=time_end)
         time_check=(time_start.astimezone(pytz.timezone('Asia/Kolkata'))).strftime("%d %b, %Y %I:%M %p")
         self.client.login(username="SquadG", password='admin123')
-        with self.assertNumQueries(4): #again missed one session and auth hit so thought 2 initially
+        with self.assertNumQueries(3): #again missed one session and auth hit so thought 2 initially
             response = self.client.get('/capi/')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'home.html')
         self.assertEquals(response.context['assignment_records'][0].assigned_start_time,time_check)
+        
 
-
+        
 
 class CaptureTokenTestCase(TestCase):
     @patch('capi.models.Credential.save_captured_token')
