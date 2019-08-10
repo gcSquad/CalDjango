@@ -174,7 +174,7 @@ class CredentialTestCase(TestCase):
         mock_flow.authorization_url.return_value='test_url','test_state'
         with self.assertNumQueries(1):
             test=credential_obj.return_auth_url()
-        self.assertIs(test,"test_url")
+        self.assertEquals(test,"test_url")
 
 
     @patch('google_auth_oauthlib.flow.InstalledAppFlow.from_client_config')
