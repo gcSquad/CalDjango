@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+  <h2>Home</h2>
+  <body>
+    <header>
+      <h1>Welcome to CalendarApi.com</h1>
+      {% if user.is_authenticated %}
+        Hi {{ user.username }}!
+        <br/>
+        <h3>Your assignments</h3>
+        {% if assignment_records %}
+        {% for record in assignment_records %}
+        
+        <p>{{ record.assigned_start_time }}</p>
+        {% endfor %}
+        {% else %}
+        <p>No assignments for you. Enjoy !!!</p>
+        {% endif %}
+        <a href="{% url 'logout_user' %}">logout</a>
+      {% else %}
+        <a href="{% url 'login' %}">login</a>
+      {% endif %}
+    </header>
+  </body>
+{% endblock %}
+
+
