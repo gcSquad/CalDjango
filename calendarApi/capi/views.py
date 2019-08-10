@@ -71,21 +71,20 @@ def logout_user(request):
     return render(request,'logout.html')
 
 def render_home(request):
-    try:
-        user_from_userdata=UserData.objects.get(personal_email=request.user.email)
-    except UserData.DoesNotExist:
-        return render(request,'home.html')
 
-    assignment_records = AssignementData.objects.filter(user=user_from_userdata)
-    user_timezone=user_from_userdata.timeZone
+    assignment_records = AssignementData.objects.select_related('user').filter(user__personal_email=request.user.email)
+
+    if not assignment_records:
+        context={
+                        "invalid_user":True
+                }
+        return render(request,'login.html',context)
+
     for assignment in assignment_records:
+        user_timezone = assignment.user.timeZone
         assignment.assigned_start_time =(assignment.assigned_start_time.astimezone(user_timezone)).strftime("%d %b, %Y %I:%M %p")
-        assignment.assigned_end_time =(assignment.assigned_end_time.astimezone(user_timezone)).strftime("%d %b, %Y %I:%M %p")    
+        assignment.assigned_end_time =(assignment.assigned_end_time.astimezone(user_timezone)).strftime("%d %b, %Y %I:%M %p")
     context={
-                  "assignment_records":assignment_records
+                    "assignment_records":assignment_records
             }
     return render(request,'home.html',context)
-
-
-
-

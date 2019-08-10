@@ -55,14 +55,24 @@ class HomeViewTestCase(TestCase):
         user=UserDataFactory(personal_email="gauarv.chatkdfhg@un.co",
             username = "SquadG",timeZone = pytz.timezone('Asia/Kolkata'))
         time_start= timezone.now().astimezone(pytz.timezone('Asia/Kolkata'))
-        time_end = (timezone.now()- datetime.timedelta(hours=5)).astimezone(pytz.timezone('Asia/Kolkata'))
+        time_end = (timezone.now()+ datetime.timedelta(hours=5)).astimezone(pytz.timezone('Asia/Kolkata'))
         test_object=AssignementDataFactory(user=user,assigned_start_time=time_start,assigned_end_time=time_end)
+
+        time_start= (timezone.now()- datetime.timedelta(hours=2)).astimezone(pytz.timezone('Asia/Kolkata'))
+        time_end = (timezone.now()+ datetime.timedelta(hours=4)).astimezone(pytz.timezone('Asia/Kolkata'))
+        test_object=AssignementDataFactory(user=user,assigned_start_time=time_start,assigned_end_time=time_end)
+
+
+        time_start= (timezone.now()- datetime.timedelta(hours=1)).astimezone(pytz.timezone('Asia/Kolkata'))
+        time_end = (timezone.now()+ datetime.timedelta(hours=5)).astimezone(pytz.timezone('Asia/Kolkata'))
+        test_object=AssignementDataFactory(user=user,assigned_start_time=time_start,assigned_end_time=time_end)
+
+        
         time_check=(time_start.astimezone(pytz.timezone('Asia/Kolkata'))).strftime("%d %b, %Y %I:%M %p")
         self.client.login(username="SquadG", password='admin123')
         with self.assertNumQueries(3): #again missed one session and auth hit so thought 2 initially
             response = self.client.get('/capi/')
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'home.html')
         self.assertEquals(response.context['assignment_records'][0].assigned_start_time,time_check)
         
 
